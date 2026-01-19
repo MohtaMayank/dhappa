@@ -1,0 +1,5 @@
+{
+  "name": "Card Run UI Prototyper For Dhappa",
+  "description": "A visual prototype for a card game UI, showcasing space-saving card runs, compression logic for long sequences, and unique wildcard representations for mobile screens.",
+  "requestFramePermissions": []
+}

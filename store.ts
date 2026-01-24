@@ -1,5 +1,5 @@
 
-import { create } from 'https://esm.sh/zustand';
+import { create } from 'zustand';
 import { GameState, Player, CardDef, Run, Team, GamePhase, Suit, WildType } from './types';
 import { createDeck, generateId, sortHand } from './constants';
 

@@ -37,7 +37,7 @@ const CardBase: React.FC<CardBaseProps> = ({
     : 'bg-white border-slate-300';
 
   const selectionClass = isSelected 
-    ? 'ring-2 ring-yellow-400 -translate-y-2 z-50 shadow-xl' 
+    ? 'ring-2 ring-yellow-400 shadow-xl' 
     : 'shadow-md';
 
   return (

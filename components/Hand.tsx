@@ -19,8 +19,11 @@ const Hand: React.FC<HandProps> = ({ cards, selectedIds, onToggleCard, isDisable
           return (
             <div 
               key={card.id} 
-              className="ml-[-24px] sm:ml-[-28px] first:ml-0 transition-transform hover:-translate-y-2"
-              style={{ zIndex: isSelected ? 100 : idx + 10 }}
+              className={`transition-transform duration-200 hover:-translate-y-2 ${isSelected ? '-translate-y-4' : ''}`}
+              style={{ 
+                zIndex: idx + 10,
+                marginLeft: idx === 0 ? '0' : '-24px'
+              }}
             >
               <CardBase 
                 card={card} 

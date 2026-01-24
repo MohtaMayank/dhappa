@@ -1,117 +1,79 @@
 
-import React, { useMemo } from 'react';
-import { CardDef, Run as RunType, Suit } from '../types';
+import React from 'react';
+import { Player, Run as RunType, Suit } from '../types';
 import { SUIT_COLORS, SUIT_SYMBOLS } from '../constants';
 import Run from './Run';
 
 interface PlayerBoardProps {
-  playerLabel: string;
-  runs: RunType[];
-  statusColor?: string;
-  onInspectRun?: (cards: CardDef[]) => void;
+  players: Player[];
+  onRunClick?: (runId: string) => void;
 }
 
-// Map card values to numbers for sorting purposes
-const CARD_VALUE_MAP: Record<string, number> = {
-  'A': 14,
-  'K': 13,
-  'Q': 12,
-  'J': 11,
-  '10': 10,
-  '9': 9,
-  '8': 8,
-  '7': 7,
-  '6': 6,
-  '5': 5,
-  '4': 4,
-  '3': 3,
-  '2': 2
-};
-
 const PlayerBoard: React.FC<PlayerBoardProps> = ({ 
-  playerLabel, 
-  runs, 
-  statusColor = 'bg-emerald-400',
-  onInspectRun
+  players, 
+  onRunClick 
 }) => {
-  // Logic: Group by suit and sort rows by conventional order
-  const groupedRuns = useMemo(() => {
-    const groups: Record<Suit, RunType[]> = {
-      [Suit.Hearts]: [],
-      [Suit.Spades]: [],
-      [Suit.Clubs]: [],
-      [Suit.Diamonds]: []
-    };
-
-    // 1. Group runs by their primary suit (determined by the first card in the run)
-    runs.forEach(run => {
-      const suit = run.cards[0]?.suit;
-      if (suit && groups[suit]) {
-        groups[suit].push(run);
-      }
-    });
-
-    // 2. Sort each suit group: Higher card runs to the left (descending order)
-    Object.keys(groups).forEach((key) => {
-      const suit = key as Suit;
-      groups[suit].sort((a, b) => {
-        const headA = a.cards[0];
-        const headB = b.cards[0];
-        
-        const valA = headA ? (CARD_VALUE_MAP[headA.value] || 0) : 0;
-        const valB = headB ? (CARD_VALUE_MAP[headB.value] || 0) : 0;
-        
-        // Return descending: higher values first
-        return valB - valA;
-      });
-    });
-
-    return groups;
-  }, [runs]);
-
   const suitOrder = [Suit.Hearts, Suit.Spades, Suit.Clubs, Suit.Diamonds];
 
   return (
-    <section className="flex-1 flex flex-col min-h-0 border-b border-white/5 last:border-b-0">
-      <header className="bg-black/20 backdrop-blur-sm px-3 py-1.5 flex items-center gap-2 border-b border-white/10 shrink-0">
-        <div className={`w-1.5 h-1.5 rounded-full ${statusColor} shadow-sm shadow-black/50`}></div>
-        <h2 className="text-[10px] font-black text-white/90 uppercase tracking-[0.2em] drop-shadow-md">
-          {playerLabel}
-        </h2>
-      </header>
-      
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-hide">
-        {suitOrder.map((suit) => {
-          const suitRuns = groupedRuns[suit];
-          if (suitRuns.length === 0) return null;
-
-          return (
-            <div key={suit} className="flex items-start gap-1">
-              {/* Vertical Suit Icon Column */}
-              <div className="w-5 shrink-0 flex flex-col items-center pt-2.5">
-                <span className={`${SUIT_COLORS[suit]} text-xl font-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.3)]`}>
-                  {SUIT_SYMBOLS[suit]}
+    <section className="flex flex-col gap-10 py-4">
+      {players.map((player) => {
+        const hasRuns = player.runs.length > 0;
+        
+        return (
+          <div key={player.id} className="flex flex-col gap-4 animate-in fade-in slide-in-from-left-4 duration-500">
+            <header className="flex items-center gap-3 border-l-4 border-emerald-500 pl-3 py-1 bg-white/5 rounded-r-lg">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black ${player.team === 'Team A' ? 'bg-blue-600' : 'bg-red-600'} text-white shadow-lg border border-white/20`}>
+                {player.name[0]}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-white uppercase tracking-wider">{player.name}</span>
+                <span className={`text-[7px] font-bold uppercase tracking-widest ${player.hasOpened ? 'text-emerald-400' : 'text-white/30'}`}>
+                  {player.hasOpened ? 'OPENED' : 'NOT OPENED'}
                 </span>
               </div>
-              
-              {/* Horizontal Row of Runs for this suit */}
-              <div className="flex-1 flex flex-wrap items-center gap-y-2">
-                {suitRuns.map((run, idx) => (
-                  <div key={run.id} className="flex items-center">
-                    <Run 
-                      data={run.cards} 
-                      onInspect={onInspectRun}
-                    />
-                    {idx < suitRuns.length - 1 && (
-                      <div className="mx-2 h-8 w-[1px] bg-white/10 self-center"></div>
-                    )}
-                  </div>
-                ))}
+            </header>
+
+            {!hasRuns ? (
+              <p className="text-[9px] font-bold text-white/10 uppercase tracking-widest ml-11 italic">No runs played yet</p>
+            ) : (
+              <div className="flex flex-col gap-6 ml-11">
+                {suitOrder.map((suit) => {
+                  const suitRuns = player.runs.filter(r => r.cards[0]?.suit === suit || r.cards[0]?.represents?.suit === suit);
+                  if (suitRuns.length === 0) return null;
+
+                  return (
+                    <div key={suit} className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 opacity-40">
+                        <span className={`${SUIT_COLORS[suit]} text-xs`}>{SUIT_SYMBOLS[suit]}</span>
+                        <span className="text-[8px] font-black text-white uppercase tracking-widest">{suit} SEQUENCE</span>
+                      </div>
+                      <div className="flex flex-wrap gap-4">
+                        {suitRuns.map((run) => (
+                          <Run 
+                            key={run.id} 
+                            data={run.cards} 
+                            label={run.isPure ? "PURE" : "MIXED"}
+                            onClick={() => onRunClick?.(run.id)}
+                            className="hover:scale-105 transition-transform"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            )}
+          </div>
+        );
+      })}
+
+      {players.every(p => p.runs.length === 0) && (
+        <div className="flex flex-col items-center justify-center py-20 opacity-20">
+          <i className="fa-solid fa-layer-group text-4xl mb-4"></i>
+          <p className="text-xs font-black uppercase tracking-widest">The table is empty</p>
+        </div>
+      )}
     </section>
   );
 };

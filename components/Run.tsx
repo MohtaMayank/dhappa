@@ -1,96 +1,106 @@
 
 import React, { useMemo } from 'react';
 import { CardDef } from '../types';
-import { parseRunString } from '../constants';
 import CardBase from './CardBase';
 
 interface RunProps {
-  /** A string like "AH, KH, W2->QH" or an array of CardDef */
-  data: string | CardDef[];
+  data: CardDef[];
   label?: string;
   className?: string;
   onInspect?: (cards: CardDef[]) => void;
+  onClick?: () => void;
 }
 
-const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect }) => {
-  const cards = useMemo(() => (typeof data === 'string' ? parseRunString(data) : data), [data]);
-
-  // Compression logic: Identifies groups of 4+ natural continuous cards to show "..."
+const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onClick }) => {
   const elements = useMemo(() => {
     const result: any[] = [];
     let i = 0;
-    while (i < cards.length) {
+    while (i < data.length) {
       let j = i;
-      while (j < cards.length && !cards[j].isWild) {
+      // Find a sequence of continuous natural cards
+      while (j < data.length && !data[j].isWild) {
         j++;
       }
-      const length = j - i;
-      if (length >= 4) {
-        result.push({ type: 'dotted', start: cards[i], end: cards[j - 1] });
+      
+      const naturalLength = j - i;
+      if (naturalLength >= 4) {
+        // Compress this sequence
+        result.push({ type: 'sequence', start: data[i], end: data[j-1], length: naturalLength });
       } else {
+        // Just add cards individually
         for (let k = i; k < j; k++) {
-          result.push({ type: 'card', card: cards[k] });
+          result.push({ type: 'card', card: data[k] });
         }
       }
-      if (j < cards.length && cards[j].isWild) {
-        result.push({ type: 'card', card: cards[j] });
+
+      if (j < data.length && data[j].isWild) {
+        result.push({ type: 'card', card: data[j] });
         i = j + 1;
       } else {
         i = j;
       }
     }
     return result;
-  }, [cards]);
+  }, [data]);
 
-  // Mobile: w-11 (44px). Visible 16px -> overlap -28px
+  // Negative margin for stacking
   const overlapClass = "ml-[-28px] sm:ml-[-34px]";
 
   return (
     <div 
-      className={`flex flex-col shrink-0 cursor-pointer group select-none active:scale-[0.98] transition-transform ${className}`}
-      onClick={() => onInspect?.(cards)}
+      className={`flex flex-col shrink-0 cursor-pointer group select-none transition-transform active:scale-[0.98] ${className}`}
+      onClick={onClick}
     >
-      {label && <h4 className="text-[7px] font-bold text-emerald-300/50 uppercase tracking-wider ml-1 mb-0.5">{label}</h4>}
-      <div className="flex items-center relative">
+      {label && <h4 className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 mb-1">{label}</h4>}
+      
+      <div className="flex items-center relative py-1 h-16 sm:h-20">
         {elements.map((el, idx) => {
-          const isLastElement = idx === elements.length - 1;
-          const isFirstInRun = idx === 0;
+          const isFirst = idx === 0;
+          const isLast = idx === elements.length - 1;
           const style = { zIndex: idx + 10 };
-          const marginClass = idx === 0 ? '' : overlapClass;
+          const margin = isFirst ? '' : overlapClass;
 
-          if (el.type === 'dotted') {
+          if (el.type === 'sequence') {
             return (
               <React.Fragment key={idx}>
-                <div style={style} className={marginClass}>
-                  <CardBase card={el.start} isStacked={true} isFirst={isFirstInRun} />
+                {/* Start of sequence */}
+                <div style={style} className={margin}>
+                  <CardBase card={el.start} isStacked={true} isFirst={true} />
                 </div>
+                
+                {/* Arrow / Gap indicator */}
                 <div 
-                  style={{ zIndex: idx + 11 }}
-                  className={`relative w-11 h-14 sm:w-13 sm:h-18 ${overlapClass}`}
+                  style={{ zIndex: idx + 11 }} 
+                  className={`relative w-12 h-14 sm:w-14 sm:h-18 ${overlapClass} bg-emerald-800/40 rounded-md border border-white/5 flex flex-col items-center justify-center gap-1 shadow-inner`}
                 >
-                  <div className="absolute top-[3px] left-[5px] w-full h-full bg-black/20 rounded-md border border-black/40 shadow-sm"></div>
-                  <div className="absolute top-[1.5px] left-[2.5px] w-full h-full bg-white/10 rounded-md border border-white/20 shadow-sm"></div>
-                  <div className="absolute top-0 left-0 w-full h-full bg-white/95 rounded-md border-[1.5px] border-slate-900 flex items-center justify-center gap-0.5 shadow-sm">
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
+                  <div className="flex gap-0.5">
+                    <div className="w-1 h-1 rounded-full bg-white/40"></div>
+                    <div className="w-1 h-1 rounded-full bg-white/40"></div>
+                    <div className="w-1 h-1 rounded-full bg-white/40"></div>
                   </div>
+                  <i className="fa-solid fa-arrow-right-long text-[8px] text-white/20"></i>
+                  <span className="text-[8px] font-black text-white/20">{el.length}</span>
                 </div>
+
+                {/* End of sequence */}
                 <div style={{ zIndex: idx + 12 }} className={overlapClass}>
-                  <CardBase card={el.end} isStacked={!isLastElement} isLast={isLastElement} />
+                  <CardBase card={el.end} isStacked={!isLast} isLast={isLast} />
                 </div>
               </React.Fragment>
             );
           }
 
           return (
-            <div key={idx} style={style} className={marginClass}>
-              <CardBase card={el.card} isStacked={!isLastElement} isFirst={isFirstInRun} isLast={isLastElement} />
+            <div key={idx} style={style} className={margin}>
+              <CardBase 
+                card={el.card} 
+                isStacked={!isLast} 
+                isFirst={isFirst} 
+                isLast={isLast} 
+              />
             </div>
           );
         })}
-        {/* Subtle hover indicator */}
-        <div className="absolute inset-y-0 -inset-x-1 bg-white/0 group-hover:bg-white/5 rounded-lg transition-colors pointer-events-none"></div>
       </div>
     </div>
   );

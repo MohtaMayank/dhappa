@@ -44,26 +44,28 @@ const CardBase: React.FC<CardBaseProps> = ({
 
   // Size classes based on variant
   // Standard: w-11 h-14 (mobile) -> md:w-16 md:h-24 (desktop)
-  // Compact: w-11 h-14 (mobile) -> Matches mobile size on desktop
+  // Compact: w-11 h-14 (mobile) -> md:w-8 md:h-11 (desktop)
   const sizeClass = variant === 'standard'
     ? 'w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24'
-    : 'w-11 h-14 sm:w-13 sm:h-18';
+    : 'w-11 h-14 sm:w-13 sm:h-18 md:w-8 md:h-11';
 
   const cornerTextClass = variant === 'standard'
     ? 'text-[10px] sm:text-xs md:text-sm'
-    : 'text-[10px] sm:text-xs';
+    : 'text-[10px] sm:text-xs md:text-[11px]';
 
   const cornerSymbolClass = variant === 'standard'
     ? 'text-[8px] sm:text-[10px] md:text-xs'
-    : 'text-[8px] sm:text-[10px]';
+    : 'text-[8px] sm:text-[10px] md:text-[9px]';
     
   const centerTextClass = variant === 'standard'
     ? 'text-[14px] sm:text-lg md:text-2xl'
-    : 'text-[14px] sm:text-lg';
+    : 'md:hidden'; // Hide center on compact
 
   const centerSymbolClass = variant === 'standard'
     ? 'text-lg sm:text-xl md:text-3xl'
-    : 'text-lg sm:text-xl';
+    : 'md:hidden'; // Hide center on compact
+
+  const paddingClass = variant === 'compact' ? 'p-0.5 md:p-[1px]' : 'p-0.5';
 
   return (
     <div 
@@ -71,7 +73,7 @@ const CardBase: React.FC<CardBaseProps> = ({
       className={`relative ${sizeClass} rounded-md border-[1.5px] ${bgClass} ${selectionClass} ${className} transition-all duration-200 cursor-pointer overflow-hidden flex flex-col`}
     >
       {/* Corner Value/Suit */}
-      <div className={`flex flex-col items-start leading-none p-0.5 z-10 ${colorClass}`}>
+      <div className={`flex flex-col items-start leading-none ${paddingClass} z-10 ${colorClass}`}>
         <span className={`${cornerTextClass} font-black tracking-tighter uppercase`}>
           {displayValue === 'Jo' ? 'J' : displayValue}
         </span>

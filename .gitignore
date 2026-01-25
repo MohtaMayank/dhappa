@@ -26,3 +26,6 @@ dist-ssr
 # Beads state and logs
 .beads/export-state/
 .beads/logs/
+
+# Worktrees
+worktrees/

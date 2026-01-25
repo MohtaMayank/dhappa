@@ -43,6 +43,15 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
     return result;
   }, [data]);
 
+  const zIndices = useMemo(() => {
+    let current = 10;
+    return elements.map(el => {
+      const z = current;
+      current += (el.type === 'sequence' ? 3 : 1);
+      return z;
+    });
+  }, [elements]);
+
   // Negative margin for stacking
   const overlapClass = "ml-[-28px] sm:ml-[-34px]";
 
@@ -57,7 +66,8 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
         {elements.map((el, idx) => {
           const isFirst = idx === 0;
           const isLast = idx === elements.length - 1;
-          const style = { zIndex: idx + 10 };
+          const zIndex = zIndices[idx];
+          const style = { zIndex };
           const margin = isFirst ? '' : overlapClass;
 
           if (el.type === 'sequence') {
@@ -70,7 +80,7 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
                 
                 {/* Arrow / Gap indicator */}
                 <div 
-                  style={{ zIndex: idx + 11 }} 
+                  style={{ zIndex: zIndex + 1 }} 
                   className={`relative w-12 h-14 sm:w-14 sm:h-18 ${overlapClass} bg-emerald-800/40 rounded-md border border-white/5 flex flex-col items-center justify-center gap-1 shadow-inner`}
                 >
                   <div className="flex gap-0.5">
@@ -83,7 +93,7 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
                 </div>
 
                 {/* End of sequence */}
-                <div style={{ zIndex: idx + 12 }} className={overlapClass}>
+                <div style={{ zIndex: zIndex + 2 }} className={overlapClass}>
                   <CardBase card={el.end} isStacked={!isLast} isLast={isLast} />
                 </div>
               </React.Fragment>

@@ -39,6 +39,15 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
     return result;
   }, [cards]);
 
+  const zIndices = useMemo(() => {
+    let current = 10;
+    return elements.map(el => {
+      const z = current;
+      current += (el.type === 'dotted' ? 3 : 1);
+      return z;
+    });
+  }, [elements]);
+
   // Mobile: w-11 (44px). Visible 16px -> overlap -28px
   // sm: w-13 (52px). Visible 18px -> overlap -34px
   const overlapClass = "ml-[-28px] sm:ml-[-34px]";
@@ -50,7 +59,8 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
         {elements.map((el, idx) => {
           const isLastElement = idx === elements.length - 1;
           const isFirstInRun = idx === 0;
-          const style = { zIndex: idx + 10 };
+          const zIndex = zIndices[idx];
+          const style = { zIndex };
           const marginClass = idx === 0 ? '' : overlapClass;
 
           if (el.type === 'dotted') {
@@ -60,7 +70,7 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
                   <CardBase card={el.start} isStacked={true} isFirst={isFirstInRun} />
                 </div>
                 <div 
-                  style={{ zIndex: idx + 11 }}
+                  style={{ zIndex: zIndex + 1 }}
                   className={`relative w-11 h-14 sm:w-13 sm:h-18 ${overlapClass}`}
                 >
                   <div className="absolute top-[3px] left-[5px] w-full h-full bg-black/20 rounded-md border border-black/40 shadow-sm"></div>
@@ -71,7 +81,7 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
                     <div className="w-1 h-1 rounded-full bg-black/60"></div>
                   </div>
                 </div>
-                <div style={{ zIndex: idx + 12 }} className={overlapClass}>
+                <div style={{ zIndex: zIndex + 2 }} className={overlapClass}>
                   <CardBase card={el.end} isStacked={!isLastElement} isLast={isLastElement} />
                 </div>
               </React.Fragment>

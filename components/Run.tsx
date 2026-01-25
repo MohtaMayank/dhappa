@@ -44,7 +44,7 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
   }, [data]);
 
   // Negative margin for stacking
-  const overlapClass = "ml-[-28px] sm:ml-[-34px]";
+  const overlapClass = "ml-[-28px] sm:ml-[-34px] md:-ml-6";
 
   return (
     <div 
@@ -65,26 +65,26 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
               <React.Fragment key={idx}>
                 {/* Start of sequence */}
                 <div style={style} className={margin}>
-                  <CardBase card={el.start} isStacked={true} isFirst={true} />
+                  <CardBase card={el.start} isStacked={true} isFirst={true} variant="compact" />
                 </div>
                 
                 {/* Arrow / Gap indicator */}
                 <div 
                   style={{ zIndex: idx + 11 }} 
-                  className={`relative w-12 h-14 sm:w-14 sm:h-18 ${overlapClass} bg-emerald-800/40 rounded-md border border-white/5 flex flex-col items-center justify-center gap-1 shadow-inner`}
+                  className={`relative w-12 h-14 sm:w-14 sm:h-18 md:w-8 md:h-11 ${overlapClass} bg-emerald-900 rounded-md border border-emerald-700 flex flex-col items-center justify-center shadow-lg`}
                 >
-                  <div className="flex gap-0.5">
-                    <div className="w-1 h-1 rounded-full bg-white/40"></div>
-                    <div className="w-1 h-1 rounded-full bg-white/40"></div>
-                    <div className="w-1 h-1 rounded-full bg-white/40"></div>
+                  <div className="absolute top-0.5 left-0.5 right-0.5 bottom-0.5 border border-emerald-800 rounded-sm"></div>
+                  <div className="flex flex-col items-center gap-0.5 z-10">
+                     <div className="w-3 h-0.5 bg-emerald-600 rounded-full mb-0.5"></div>
+                     <span className="text-[9px] font-black text-emerald-400">{el.length}</span>
                   </div>
-                  <i className="fa-solid fa-arrow-right-long text-[8px] text-white/20"></i>
-                  <span className="text-[8px] font-black text-white/20">{el.length}</span>
+                  {/* Stack effect lines */}
+                  <div className="absolute -right-0.5 top-1 bottom-1 w-[1px] bg-emerald-950/50"></div>
                 </div>
 
                 {/* End of sequence */}
                 <div style={{ zIndex: idx + 12 }} className={overlapClass}>
-                  <CardBase card={el.end} isStacked={!isLast} isLast={isLast} />
+                  <CardBase card={el.end} isStacked={!isLast} isLast={isLast} variant="compact" />
                 </div>
               </React.Fragment>
             );
@@ -97,6 +97,7 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
                 isStacked={!isLast} 
                 isFirst={isFirst} 
                 isLast={isLast} 
+                variant="compact"
               />
             </div>
           );

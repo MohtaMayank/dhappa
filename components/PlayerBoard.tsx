@@ -94,7 +94,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                 </div>
 
                 {/* Desktop View: Flat List */}
-                <div className="hidden md:flex flex-wrap gap-1">
+                <div className="hidden md:flex flex-wrap gap-6">
                     {player.runs
                         .sort((a, b) => getRunValue(b) - getRunValue(a))
                         .map((run) => {

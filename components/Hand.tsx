@@ -13,10 +13,10 @@ interface HandProps {
 const Hand: React.FC<HandProps> = ({ cards, selectedIds, onToggleCard, isDisabled }) => {
   return (
     <div className="w-full overflow-x-auto overflow-y-visible pt-0 pb-8 px-8 scrollbar-hide">
-      <div className="flex items-end justify-start min-w-max h-24 sm:h-28 lg:h-36 px-4">
+      <div className="flex items-end justify-start min-w-max h-24 sm:h-28 md:h-36 px-4">
         {cards.map((card, idx) => {
           const isSelected = selectedIds.has(card.id);
-          const marginClass = idx === 0 ? '' : '-ml-6 lg:-ml-10';
+          const marginClass = idx === 0 ? '' : '-ml-6 md:-ml-10';
           
           return (
             <div 

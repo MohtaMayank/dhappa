@@ -43,27 +43,27 @@ const CardBase: React.FC<CardBaseProps> = ({
     : 'shadow-md';
 
   // Size classes based on variant
-  // Standard: w-11 h-14 (mobile) -> lg:w-16 lg:h-24 (desktop)
-  // Compact: w-11 h-14 (mobile) -> lg:w-12 lg:h-16 (desktop)
+  // Standard: w-11 h-14 (mobile) -> md:w-16 md:h-24 (desktop)
+  // Compact: w-11 h-14 (mobile) -> md:w-12 md:h-16 (desktop)
   const sizeClass = variant === 'standard'
-    ? 'w-11 h-14 sm:w-13 sm:h-18 lg:w-16 lg:h-24'
-    : 'w-11 h-14 sm:w-13 sm:h-18 lg:w-12 lg:h-16';
+    ? 'w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24'
+    : 'w-11 h-14 sm:w-13 sm:h-18 md:w-12 md:h-16';
 
   const cornerTextClass = variant === 'standard'
-    ? 'text-[10px] sm:text-xs lg:text-sm'
-    : 'text-[10px] sm:text-xs lg:text-[10px]';
+    ? 'text-[10px] sm:text-xs md:text-sm'
+    : 'text-[10px] sm:text-xs md:text-[10px]';
 
   const cornerSymbolClass = variant === 'standard'
-    ? 'text-[8px] sm:text-[10px] lg:text-xs'
-    : 'text-[8px] sm:text-[10px] lg:text-[8px]';
+    ? 'text-[8px] sm:text-[10px] md:text-xs'
+    : 'text-[8px] sm:text-[10px] md:text-[8px]';
     
   const centerTextClass = variant === 'standard'
-    ? 'text-[14px] sm:text-lg lg:text-2xl'
-    : 'text-[14px] sm:text-lg lg:text-lg';
+    ? 'text-[14px] sm:text-lg md:text-2xl'
+    : 'text-[14px] sm:text-lg md:text-lg';
 
   const centerSymbolClass = variant === 'standard'
-    ? 'text-lg sm:text-xl lg:text-3xl'
-    : 'text-lg sm:text-xl lg:text-xl';
+    ? 'text-lg sm:text-xl md:text-3xl'
+    : 'text-lg sm:text-xl md:text-xl';
 
   return (
     <div 
@@ -84,7 +84,7 @@ const CardBase: React.FC<CardBaseProps> = ({
       <div className={`flex-1 flex items-center justify-center ${colorClass} transition-opacity`}>
         {isWild ? (
            <div className="flex flex-col items-center">
-             <i className={`fa-solid ${isStatic ? 'fa-thumbtack' : 'fa-bolt-lightning'} text-[10px] lg:text-sm mb-0.5 opacity-40`}></i>
+             <i className={`fa-solid ${isStatic ? 'fa-thumbtack' : 'fa-bolt-lightning'} text-[10px] md:text-sm mb-0.5 opacity-40`}></i>
              <span className={`${centerTextClass} opacity-80`}>{symbol}</span>
            </div>
         ) : (

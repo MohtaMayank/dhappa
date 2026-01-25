@@ -44,26 +44,26 @@ const CardBase: React.FC<CardBaseProps> = ({
 
   // Size classes based on variant
   // Standard: w-11 h-14 (mobile) -> md:w-16 md:h-24 (desktop)
-  // Compact: w-11 h-14 (mobile) -> md:w-8 md:h-11 (desktop)
+  // Compact: w-11 h-14 (mobile) -> Matches mobile size on desktop
   const sizeClass = variant === 'standard'
     ? 'w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24'
-    : 'w-11 h-14 sm:w-13 sm:h-18 md:w-8 md:h-11';
+    : 'w-11 h-14 sm:w-13 sm:h-18';
 
   const cornerTextClass = variant === 'standard'
     ? 'text-[10px] sm:text-xs md:text-sm'
-    : 'text-[10px] sm:text-xs md:text-xs';
+    : 'text-[10px] sm:text-xs';
 
   const cornerSymbolClass = variant === 'standard'
     ? 'text-[8px] sm:text-[10px] md:text-xs'
-    : 'text-[8px] sm:text-[10px] md:text-[8px]';
+    : 'text-[8px] sm:text-[10px]';
     
   const centerTextClass = variant === 'standard'
     ? 'text-[14px] sm:text-lg md:text-2xl'
-    : 'md:hidden'; // Hide center on compact
+    : 'text-[14px] sm:text-lg';
 
   const centerSymbolClass = variant === 'standard'
     ? 'text-lg sm:text-xl md:text-3xl'
-    : 'md:hidden'; // Hide center on compact
+    : 'text-lg sm:text-xl';
 
   return (
     <div 

@@ -41,9 +41,9 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
 
   // Mobile: w-11 (44px). Visible 16px -> overlap -28px
   // sm: w-13 (52px). Visible 18px -> overlap -34px
-  // md (Compact): w-8 (32px). Visible 8px -> overlap -24px
+  // md (Compact): w-11 (44px). Visible 16px -> overlap -28px (Match Mobile)
   const overlapClass = "ml-[-28px] sm:ml-[-34px]";
-  const lgOverlapClass = "md:-ml-6";
+  const lgOverlapClass = "md:ml-[-28px]";
 
   const renderElements = (items: any[], isCompressed: boolean) => (
     <div className={`flex items-center ${isCompressed ? 'md:hidden' : 'hidden md:flex'}`}>

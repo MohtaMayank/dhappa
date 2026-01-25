@@ -161,10 +161,10 @@ const App: React.FC = () => {
             <div className="absolute top-8 left-1/2 -translate-x-1/2">
                 <PlayerAvatar player={players[2]} isCurrentTurn={currentPlayerIndex === 2} position="top" />
             </div>
-            <div className="absolute top-1/2 left-4 -translate-y-1/2">
+            <div className="absolute top-1/2 left-4 -translate-y-1/2 md:top-8 md:left-4 md:translate-y-0">
                 <PlayerAvatar player={players[3]} isCurrentTurn={currentPlayerIndex === 3} position="left" />
             </div>
-            <div className="absolute top-1/2 right-4 -translate-y-1/2">
+            <div className="absolute top-1/2 right-4 -translate-y-1/2 md:top-8 md:right-4 md:translate-y-0">
                 <PlayerAvatar player={players[1]} isCurrentTurn={currentPlayerIndex === 1} position="right" />
             </div>
             </div>

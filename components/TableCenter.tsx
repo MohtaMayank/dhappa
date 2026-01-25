@@ -23,7 +23,7 @@ const TableCenter: React.FC<TableCenterProps> = ({
   const topDiscard = discardPile[discardPile.length - 1];
 
   return (
-    <div className="flex items-center gap-6 sm:gap-12 md:gap-24 relative z-20">
+    <div className="flex items-center gap-6 sm:gap-12 md:gap-16 relative z-20">
       {/* Draw Pile */}
       <div className="flex flex-col items-center gap-1 group">
         <div 

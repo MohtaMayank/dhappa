@@ -67,19 +67,25 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
                   <CardBase card={el.start} isStacked={true} isFirst={true} variant="compact" />
                 </div>
                 
-                {/* Arrow / Gap indicator */}
+                {/* Arrow / Gap indicator (Stack) */}
                 <div 
                   style={{ zIndex: idx + 11 }} 
-                  className={`relative w-12 h-14 sm:w-14 sm:h-18 md:w-10 md:h-14 ${overlapClass} bg-white rounded-md border-[1.5px] border-slate-300 flex flex-col items-center justify-center shadow-sm`}
+                  className={`relative w-12 h-14 sm:w-14 sm:h-18 md:w-10 md:h-14 ${overlapClass} shrink-0`}
                 >
-                  <div className="absolute top-0.5 left-0.5 right-0.5 bottom-0.5 border border-slate-100 rounded-sm"></div>
-                  <div className="flex flex-col items-center gap-0.5 z-10">
-                     <div className="w-3 h-0.5 bg-slate-300 rounded-full mb-0.5"></div>
-                     <span className="text-[10px] font-black text-slate-400">{el.length}</span>
+                  {/* Bottom-most layer */}
+                  <div className="absolute left-[-3px] top-[3px] w-full h-full bg-white border border-black rounded-md -z-20"></div>
+                  {/* Middle layer */}
+                  <div className="absolute left-[-1.5px] top-[1.5px] w-full h-full bg-white border border-black rounded-md -z-10"></div>
+                  
+                  {/* Top layer (Main Face) */}
+                  <div className="w-full h-full bg-white rounded-md border-[1.5px] border-black flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0.5 left-0.5 right-0.5 bottom-0.5 border border-slate-100 rounded-sm"></div>
+                    <div className="flex flex-col items-center gap-0.5 z-10">
+                       <div className="w-3 h-0.5 bg-slate-300 rounded-full mb-0.5"></div>
+                       <span className="text-[11px] font-black text-slate-800 leading-none">{el.length}</span>
+                       <span className="text-[6px] font-black text-slate-400 uppercase tracking-tighter">Cards</span>
+                    </div>
                   </div>
-                  {/* Stack effect lines */}
-                  <div className="absolute -right-[1px] top-1 bottom-1 w-[1px] bg-slate-300/50"></div>
-                  <div className="absolute -right-[2px] top-1.5 bottom-1.5 w-[1px] bg-slate-300/30"></div>
                 </div>
 
                 {/* End of sequence */}

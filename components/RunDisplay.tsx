@@ -60,15 +60,23 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
                 <div style={style} className={marginClass}>
                   <CardBase card={el.start} isStacked={true} isFirst={isFirstInRun} />
                 </div>
+                {/* Stack indicator */}
                 <div 
                   style={{ zIndex: idx + 11 }}
-                  className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-10 md:h-14 ${overlapClass} bg-white rounded-md border border-slate-300 flex flex-col items-center justify-center shadow-sm`}
+                  className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-10 md:h-14 ${overlapClass} shrink-0`}
                 >
-                  <div className="absolute top-[3px] left-[3px] w-full h-full bg-slate-100/50 rounded-md border border-slate-200 -z-10"></div>
-                  <div className="flex flex-col items-center gap-0.5">
-                     <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-                     <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-                     <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                  {/* Bottom-most layer */}
+                  <div className="absolute left-[-3px] top-[3px] w-full h-full bg-white border border-black rounded-md -z-20"></div>
+                  {/* Middle layer */}
+                  <div className="absolute left-[-1.5px] top-[1.5px] w-full h-full bg-white border border-black rounded-md -z-10"></div>
+                  
+                  {/* Top layer */}
+                  <div className="w-full h-full bg-white rounded-md border-[1.5px] border-black flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
+                    <div className="flex flex-col items-center gap-0.5 z-10">
+                       <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                       <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                       <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                    </div>
                   </div>
                 </div>
                 <div style={{ zIndex: idx + 12 }} className={overlapClass}>

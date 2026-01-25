@@ -12,7 +12,7 @@ interface HandProps {
 
 const Hand: React.FC<HandProps> = ({ cards, selectedIds, onToggleCard, isDisabled }) => {
   return (
-    <div className="w-full overflow-x-auto overflow-y-visible py-4 px-8 scrollbar-hide">
+    <div className="w-full overflow-x-auto overflow-y-visible pt-0 pb-8 px-8 scrollbar-hide">
       <div className="flex items-end justify-start min-w-max h-24 sm:h-28 px-4">
         {cards.map((card, idx) => {
           const isSelected = selectedIds.has(card.id);

@@ -39,7 +39,7 @@ const App: React.FC = () => {
   const oppTeamPlayers = players.filter(p => p.team !== players[0].team);
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-emerald-900 shadow-2xl overflow-hidden border-x border-emerald-950 relative select-none">
+    <div className="flex flex-col h-dvh max-w-md mx-auto bg-emerald-900 shadow-2xl overflow-hidden border-x border-emerald-950 relative select-none">
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/felt.png')]"></div>
       
       <header className="relative z-30 bg-black/40 backdrop-blur-md px-4 py-2 flex justify-between items-center border-b border-white/10">

@@ -52,7 +52,8 @@ const getInitialScenario = (): GameState => {
     selectedInHand: new Set(),
     nPickPreview: null,
     lastDrawnCard: null,
-    isNPickActive: false
+    isNPickActive: false,
+    isConfirmingDraw: false
   };
 };
 
@@ -156,7 +157,8 @@ const getMidGameScenario = (): GameState => {
     selectedInHand: new Set(),
     nPickPreview: null,
     lastDrawnCard: null,
-    isNPickActive: false
+    isNPickActive: false,
+    isConfirmingDraw: false
   };
 };
 
@@ -256,7 +258,8 @@ const getEndGameScenario = (): GameState => {
     selectedInHand: new Set(),
     nPickPreview: null,
     lastDrawnCard: null,
-    isNPickActive: false
+    isNPickActive: false,
+    isConfirmingDraw: false
   };
 };
 

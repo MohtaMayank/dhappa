@@ -57,4 +57,5 @@ export interface GameState {
   nPickPreview: number | null;
   lastDrawnCard: CardDef | null;
   isNPickActive: boolean;
+  isConfirmingDraw: boolean;
 }

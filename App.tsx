@@ -14,7 +14,8 @@ const App: React.FC = () => {
   const { 
     players, currentPlayerIndex, phase, drawPile, discardPile, 
     initGame, drawFromDeck, selectCard, selectedInHand, discardCard,
-    createRun, addToRun, lastDrawnCard, closeDrawOverlay, godMode
+    createRun, addToRun, lastDrawnCard, closeDrawOverlay, godMode,
+    isConfirmingDraw, setIsConfirmingDraw
   } = useGameStore();
 
   const [viewMode, setViewMode] = useState<'hand' | 'team_runs' | 'opponent_runs'>('hand');
@@ -34,6 +35,11 @@ const App: React.FC = () => {
       addToRun(runId);
       setViewMode('hand');
     }
+  };
+
+  const handleConfirmDraw = () => {
+    drawFromDeck();
+    setIsConfirmingDraw(false);
   };
 
   const myTeamPlayers = players.filter(p => p.team === players[0].team);
@@ -58,7 +64,7 @@ const App: React.FC = () => {
            <TableCenter 
                 drawPileCount={drawPile.length} 
                 discardPile={discardPile} 
-                onDraw={drawFromDeck}
+                onDraw={() => setIsConfirmingDraw(true)}
                 onOpenDiscard={() => setIsNPickerOpen(true)}
                 isPlayerTurn={isMyTurn}
                 phase={phase}
@@ -156,9 +162,10 @@ const App: React.FC = () => {
       )}
 
       <DrawCardOverlay 
-        isOpen={!!lastDrawnCard} 
-        onConfirm={closeDrawOverlay} 
-        onCancel={closeDrawOverlay}
+        isOpen={!!lastDrawnCard || isConfirmingDraw} 
+        onConfirm={handleConfirmDraw} 
+        onCancel={() => setIsConfirmingDraw(false)}
+        onFinishReveal={closeDrawOverlay}
         revealedCard={lastDrawnCard}
       />
       

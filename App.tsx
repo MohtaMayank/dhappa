@@ -8,6 +8,7 @@ import DiscardNPicker from './components/DiscardNPicker';
 import DrawCardOverlay from './components/DrawCardOverlay';
 import GameMenu from './components/GameMenu';
 import AmbiguityModal from './components/AmbiguityModal';
+import RunInspector from './components/RunInspector';
 import { validateAddToRun } from './gameLogic';
 import { Team, Run, CardDef } from './types';
 
@@ -23,6 +24,7 @@ const App: React.FC = () => {
 
   const [viewMode, setViewMode] = useState<'hand' | 'team_runs' | 'opponent_runs'>('hand');
   const [isNPickerOpen, setIsNPickerOpen] = useState(false);
+  const [inspectedRun, setInspectedRun] = useState<Run | null>(null);
   const [addToRunAmbiguity, setAddToRunAmbiguity] = useState<{ 
     isOpen: boolean; 
     runId: string; 
@@ -43,7 +45,10 @@ const App: React.FC = () => {
 
   const handleRunClick = (run: Run) => {
     // Only allow interaction if we have cards selected
-    if (selectedInHand.size === 0) return;
+    if (selectedInHand.size === 0) {
+      setInspectedRun(run);
+      return;
+    }
 
     const cardsToAdd = currentPlayer.hand.filter(c => selectedInHand.has(c.id));
     const validation = validateAddToRun(cardsToAdd, run);
@@ -309,6 +314,11 @@ const App: React.FC = () => {
         headRank={runCreationAmbiguity?.headRank}
         tailRank={runCreationAmbiguity?.tailRank}
         runCards={runCreationAmbiguity?.cards}
+      />
+
+      <RunInspector 
+        cards={inspectedRun?.cards || null} 
+        onClose={() => setInspectedRun(null)} 
       />
     </div>
   );

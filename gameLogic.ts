@@ -297,3 +297,34 @@ function calculateTotalGaps(sortedCards: CardDef[]): number {
     }
     return gaps;
 }
+
+export interface RunStructure {
+  active: {
+    card: CardDef;
+    representedRank: number;
+    representedSuit: Suit;
+  }[];
+  excess: CardDef[];
+  type: 'SET' | 'SEQUENCE';
+}
+
+export function analyzeRunStructure(cards: CardDef[]): RunStructure | null {
+  // Try to find the longest valid prefix
+  for (let i = cards.length; i >= 0; i--) {
+    const subset = cards.slice(0, i);
+    const context = inferRunContext(subset);
+    
+    if (context) {
+      return {
+        active: context.cards,
+        excess: cards.slice(i),
+        type: context.type
+      };
+    }
+  }
+
+  // If no valid context found (e.g. less than 3 cards, or just wilds), return null or raw
+  // But existing runs in game should be valid. 
+  // If it fails, treat everything as excess?
+  return null;
+}

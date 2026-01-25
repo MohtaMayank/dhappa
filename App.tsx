@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useGameStore } from './store';
 import PlayerAvatar from './components/PlayerAvatar';
@@ -7,17 +6,29 @@ import TableCenter from './components/TableCenter';
 import PlayerBoard from './components/PlayerBoard';
 import DiscardNPicker from './components/DiscardNPicker';
 import DrawCardOverlay from './components/DrawCardOverlay';
-import { Team } from './types';
+import AmbiguityModal from './components/AmbiguityModal';
+import { validateAddToRun } from './gameLogic';
+import { Team, Run, CardDef } from './types';
 
 const App: React.FC = () => {
   const { 
     players, currentPlayerIndex, phase, drawPile, discardPile, 
     initGame, drawFromDeck, selectCard, selectedInHand, discardCard,
-    createRun, addToRun, lastDrawnCard, closeDrawOverlay
+    createRun, addToRun, lastDrawnCard, closeDrawOverlay,
+    isSelectingRun, setSelectingRun,
+    runCreationAmbiguity, resolveCreateRunAmbiguity, cancelCreateRunAmbiguity
   } = useGameStore();
 
   const [viewMode, setViewMode] = useState<'hand' | 'team_runs' | 'opponent_runs'>('hand');
   const [isNPickerOpen, setIsNPickerOpen] = useState(false);
+  const [addToRunAmbiguity, setAddToRunAmbiguity] = useState<{ 
+    isOpen: boolean; 
+    runId: string; 
+    displacedCard?: CardDef; 
+    headRank?: number; 
+    tailRank?: number;
+    runCards: CardDef[];
+  } | null>(null);
 
   useEffect(() => {
     initGame(4);
@@ -28,15 +39,77 @@ const App: React.FC = () => {
   const currentPlayer = players[currentPlayerIndex];
   const isMyTurn = currentPlayerIndex === 0;
 
-  const handleRunClick = (runId: string) => {
-    if (selectedInHand.size === 1) {
-      addToRun(runId);
-      setViewMode('hand');
+  const handleRunClick = (run: Run) => {
+    // Only allow interaction if we have cards selected
+    if (selectedInHand.size === 0) return;
+
+    const cardsToAdd = currentPlayer.hand.filter(c => selectedInHand.has(c.id));
+    const validation = validateAddToRun(cardsToAdd, run);
+
+    if (validation.type === 'INVALID') {
+        // Just ignore invalid clicks, or maybe show a toast in future
+        console.warn('Invalid move:', validation.reason);
+        return;
     }
+
+    if (validation.type === 'REPLACE_STATIC' && validation.newPosition === 'AMBIGUOUS') {
+        setAddToRunAmbiguity({ 
+            isOpen: true, 
+            runId: run.id, 
+            displacedCard: validation.displacedCard, 
+            headRank: validation.headRank, 
+            tailRank: validation.tailRank,
+            runCards: run.cards
+        });
+        return;
+    }
+
+    if (validation.type === 'EXTEND' && validation.position === 'AMBIGUOUS') {
+        setAddToRunAmbiguity({ 
+            isOpen: true, 
+            runId: run.id, 
+            headRank: validation.headRank, 
+            tailRank: validation.tailRank,
+            runCards: run.cards
+        });
+        return;
+    }
+
+    // Valid and unambiguous
+    addToRun(run.id);
+    setSelectingRun(false);
+    setViewMode('hand');
+  };
+
+  const resolveAddToRunAmbiguity = (direction: 'HEAD' | 'TAIL') => {
+      if (!addToRunAmbiguity) return;
+      addToRun(addToRunAmbiguity.runId, { replaceDirection: direction });
+      setAddToRunAmbiguity(null);
+      setSelectingRun(false);
+      setViewMode('hand');
+  };
+
+  const getRunValidity = (run: Run): boolean => {
+      if (selectedInHand.size === 0) return false;
+      const cardsToAdd = currentPlayer.hand.filter(c => selectedInHand.has(c.id));
+      return validateAddToRun(cardsToAdd, run).type !== 'INVALID';
   };
 
   const myTeamPlayers = players.filter(p => p.team === players[0].team);
   const oppTeamPlayers = players.filter(p => p.team !== players[0].team);
+
+  const toggleSelectionMode = () => {
+      const newState = !isSelectingRun;
+      setSelectingRun(newState);
+      if (newState) {
+          // Auto-open team view if closed
+          if (viewMode === 'hand') setViewMode('team_runs');
+      } else {
+          // If cancelling, maybe go back to hand?
+          // setViewMode('hand'); 
+          // Let's stay in view to allow looking around, user can close manually.
+      }
+  };
 
   return (
     <div className="flex flex-col h-dvh max-w-md mx-auto bg-emerald-900 shadow-2xl overflow-hidden border-x border-emerald-950 relative select-none">
@@ -81,7 +154,7 @@ const App: React.FC = () => {
                         {viewMode === 'team_runs' ? "My Team's Table" : "Opponent's Table"}
                     </h2>
                     <button 
-                      onClick={() => setViewMode('hand')} 
+                      onClick={() => { setViewMode('hand'); setSelectingRun(false); }} 
                       className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
                     >
                         <i className="fa-solid fa-xmark text-xs"></i>
@@ -90,6 +163,8 @@ const App: React.FC = () => {
                 <PlayerBoard 
                     players={viewMode === 'team_runs' ? myTeamPlayers : oppTeamPlayers} 
                     onRunClick={handleRunClick}
+                    isSelectingMode={isSelectingRun}
+                    getRunValidity={getRunValidity}
                 />
             </div>
         )}
@@ -99,20 +174,31 @@ const App: React.FC = () => {
         <div className="flex flex-col gap-1 p-2">
           <div className="flex gap-2">
               <button 
-                  onClick={createRun}
+                  onClick={() => createRun()}
                   disabled={!isMyTurn || phase !== 'play' || selectedInHand.size < 3}
                   className="flex-1 py-3 bg-emerald-600/20 border border-emerald-500/30 rounded-xl flex flex-col items-center gap-1 disabled:opacity-20 active:scale-95 transition-all"
               >
                   <i className="fa-solid fa-wand-sparkles text-emerald-400 text-sm"></i>
                   <span className="text-[8px] font-black text-white uppercase tracking-widest">Open Run</span>
               </button>
+              
+              <button 
+                  onClick={toggleSelectionMode}
+                  disabled={!isMyTurn || phase !== 'play' || selectedInHand.size === 0}
+                  className={`flex-1 py-3 ${isSelectingRun ? 'bg-emerald-500/40 border-emerald-400' : 'bg-emerald-600/20 border-emerald-500/30'} border rounded-xl flex flex-col items-center gap-1 disabled:opacity-20 active:scale-95 transition-all`}
+              >
+                  <i className="fa-solid fa-layer-group text-emerald-400 text-sm"></i>
+                  <span className="text-[8px] font-black text-white uppercase tracking-widest">Add to Run</span>
+              </button>
+
               <button 
                   onClick={() => setViewMode('team_runs')}
-                  className={`flex-1 py-3 ${viewMode === 'team_runs' ? 'bg-blue-600/40 border-blue-400' : 'bg-blue-600/20 border-blue-500/30'} border rounded-xl flex flex-col items-center gap-1 active:scale-95 transition-all`}
+                  className={`flex-1 py-3 ${viewMode === 'team_runs' && !isSelectingRun ? 'bg-blue-600/40 border-blue-400' : 'bg-blue-600/20 border-blue-500/30'} border rounded-xl flex flex-col items-center gap-1 active:scale-95 transition-all`}
               >
                   <i className="fa-solid fa-people-group text-blue-400 text-sm"></i>
                   <span className="text-[8px] font-black text-white uppercase tracking-widest">My Team</span>
               </button>
+              
               <button 
                   onClick={() => setViewMode('opponent_runs')}
                   className={`flex-1 py-3 ${viewMode === 'opponent_runs' ? 'bg-red-600/40 border-red-400' : 'bg-red-600/20 border-red-500/30'} border rounded-xl flex flex-col items-center gap-1 active:scale-95 transition-all`}
@@ -120,6 +206,7 @@ const App: React.FC = () => {
                   <i className="fa-solid fa-shield-halved text-red-400 text-sm"></i>
                   <span className="text-[8px] font-black text-white uppercase tracking-widest">Opponents</span>
               </button>
+              
               <button 
                   onClick={() => discardCard(Array.from(selectedInHand)[0])}
                   disabled={!isMyTurn || phase !== 'play' || selectedInHand.size !== 1}
@@ -140,7 +227,10 @@ const App: React.FC = () => {
 
         <div className="h-6 flex items-center justify-center bg-black/40">
            <p className="text-[8px] font-bold text-yellow-400/60 uppercase tracking-widest">
-               {isMyTurn ? (phase === 'draw' ? 'Draw a card' : 'Play cards or Discard') : `Waiting for ${players[currentPlayerIndex].name}`}
+               {isSelectingRun 
+                    ? "Select a valid run to add cards..." 
+                    : (isMyTurn ? (phase === 'draw' ? 'Draw a card' : 'Play cards or Discard') : `Waiting for ${players[currentPlayerIndex].name}`)
+               }
            </p>
         </div>
       </footer>
@@ -159,6 +249,27 @@ const App: React.FC = () => {
         onConfirm={closeDrawOverlay} 
         onCancel={closeDrawOverlay}
         revealedCard={lastDrawnCard}
+      />
+
+      <AmbiguityModal 
+        isOpen={!!addToRunAmbiguity?.isOpen} 
+        type="ADD_TO_RUN"
+        onResolve={resolveAddToRunAmbiguity}
+        onCancel={() => setAddToRunAmbiguity(null)}
+        displacedCard={addToRunAmbiguity?.displacedCard}
+        headRank={addToRunAmbiguity?.headRank}
+        tailRank={addToRunAmbiguity?.tailRank}
+        runCards={addToRunAmbiguity?.runCards}
+      />
+
+      <AmbiguityModal 
+        isOpen={!!runCreationAmbiguity?.isOpen} 
+        type="CREATE_RUN"
+        onResolve={resolveCreateRunAmbiguity}
+        onCancel={cancelCreateRunAmbiguity}
+        headRank={runCreationAmbiguity?.headRank}
+        tailRank={runCreationAmbiguity?.tailRank}
+        runCards={runCreationAmbiguity?.cards}
       />
     </div>
   );

@@ -134,7 +134,7 @@ const App: React.FC = () => {
 
       <div className="flex-1 flex overflow-hidden relative">
         {/* Desktop: Left Panel (My Team) */}
-        <aside className="hidden md:flex flex-col w-1/4 bg-black/10 border-r border-white/5 overflow-y-auto p-4 custom-scrollbar">
+        <aside className="hidden md:flex flex-col w-[30%] bg-black/10 border-r border-white/5 overflow-y-auto p-4 custom-scrollbar">
             <h2 className="text-xs font-black text-blue-300 uppercase tracking-widest mb-4 sticky top-0 bg-emerald-900/80 backdrop-blur-sm py-2 z-10">
                 My Team
             </h2>
@@ -194,7 +194,7 @@ const App: React.FC = () => {
         </main>
 
         {/* Desktop: Right Panel (Opponents) */}
-        <aside className="hidden md:flex flex-col w-1/4 bg-black/10 border-l border-white/5 overflow-y-auto p-4 custom-scrollbar">
+        <aside className="hidden md:flex flex-col w-[30%] bg-black/10 border-l border-white/5 overflow-y-auto p-4 custom-scrollbar">
             <h2 className="text-xs font-black text-red-300 uppercase tracking-widest mb-4 sticky top-0 bg-emerald-900/80 backdrop-blur-sm py-2 z-10">
                 Opponents
             </h2>

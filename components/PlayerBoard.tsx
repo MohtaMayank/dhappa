@@ -31,12 +31,12 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
   };
 
   return (
-    <section className="flex flex-col gap-10 md:gap-4 py-4">
+    <section className="flex flex-col gap-10 md:gap-1 py-4">
       {players.map((player) => {
         const hasRuns = player.runs.length > 0;
         
         return (
-          <div key={player.id} className="flex flex-col gap-4 md:gap-2 animate-in fade-in slide-in-from-left-4 duration-500">
+          <div key={player.id} className="flex flex-col gap-4 md:gap-1 animate-in fade-in slide-in-from-left-4 duration-500">
             <header className="flex items-center gap-3 border-l-4 border-emerald-500 pl-3 py-1 bg-white/5 rounded-r-lg">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black ${player.team === 'Team A' ? 'bg-blue-600' : 'bg-red-600'} text-white shadow-lg border border-white/20`}>
                 {player.name[0]}
@@ -94,7 +94,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                 </div>
 
                 {/* Desktop View: Flat List */}
-                <div className="hidden md:flex flex-wrap gap-3">
+                <div className="hidden md:flex flex-wrap gap-1">
                     {player.runs
                         .sort((a, b) => getRunValue(b) - getRunValue(a))
                         .map((run) => {

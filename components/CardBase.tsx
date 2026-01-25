@@ -44,10 +44,10 @@ const CardBase: React.FC<CardBaseProps> = ({
 
   // Size classes based on variant
   // Standard: w-11 h-14 (mobile) -> md:w-16 md:h-24 (desktop)
-  // Compact: w-11 h-14 (mobile) -> md:w-12 md:h-16 (desktop)
+  // Compact: w-11 h-14 (mobile) -> md:w-10 md:h-14 (desktop)
   const sizeClass = variant === 'standard'
     ? 'w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24'
-    : 'w-11 h-14 sm:w-13 sm:h-18 md:w-12 md:h-16';
+    : 'w-11 h-14 sm:w-13 sm:h-18 md:w-10 md:h-14';
 
   const cornerTextClass = variant === 'standard'
     ? 'text-[10px] sm:text-xs md:text-sm'

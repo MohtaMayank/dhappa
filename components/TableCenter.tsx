@@ -23,12 +23,12 @@ const TableCenter: React.FC<TableCenterProps> = ({
   const topDiscard = discardPile[discardPile.length - 1];
 
   return (
-    <div className="flex items-center gap-6 sm:gap-12 relative z-20">
+    <div className="flex items-center gap-6 sm:gap-12 md:gap-16 relative z-20">
       {/* Draw Pile */}
       <div className="flex flex-col items-center gap-1 group">
         <div 
           onClick={isPlayerTurn && phase === 'draw' ? onDraw : undefined}
-          className={`relative w-11 h-14 sm:w-13 sm:h-18 rounded-md border-2 border-emerald-950 bg-emerald-800 shadow-2xl cursor-pointer transition-all active:scale-95 ${isPlayerTurn && phase === 'draw' ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-emerald-900 animate-pulse' : ''}`}
+          className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24 rounded-md border-2 border-black/30 bg-emerald-800 shadow-2xl cursor-pointer transition-all active:scale-95 ${isPlayerTurn && phase === 'draw' ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-emerald-900 animate-pulse' : ''}`}
         >
           {/* Deck Back Texture */}
           <div className="absolute inset-1 border border-white/20 rounded-sm bg-gradient-to-br from-emerald-700 to-emerald-900 flex items-center justify-center">
@@ -44,7 +44,7 @@ const TableCenter: React.FC<TableCenterProps> = ({
       <div className="flex flex-col items-center gap-1 group">
         <div 
           onClick={onOpenDiscard}
-          className={`relative w-11 h-14 sm:w-13 sm:h-18 rounded-md cursor-pointer transition-all hover:scale-105 active:scale-95 ${isPlayerTurn && phase === 'draw' ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-emerald-900' : ''}`}
+          className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24 rounded-md cursor-pointer transition-all hover:scale-105 active:scale-95 ${isPlayerTurn && phase === 'draw' ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-emerald-900' : ''}`}
         >
           {topDiscard ? (
             <CardBase card={topDiscard} isFirst={true} />
@@ -55,7 +55,7 @@ const TableCenter: React.FC<TableCenterProps> = ({
           )}
           {/* Stack indicators */}
           {discardPile.length > 1 && (
-             <div className="absolute -top-1 -left-1 w-full h-full bg-white/10 rounded-md -z-10 border border-white/5"></div>
+             <div className="absolute -top-1 -left-1 w-full h-full bg-white/10 rounded-md -z-10 border border-black/30"></div>
           )}
         </div>
         <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">Discard ({discardPile.length})</span>

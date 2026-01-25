@@ -50,18 +50,20 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
 
   // Mobile: w-11 (44px). Visible 16px -> overlap -28px
   // sm: w-13 (52px). Visible 18px -> overlap -34px
+  // md (Compact): w-10 (40px). Visible ~18px -> overlap -22px
   const overlapClass = "ml-[-28px] sm:ml-[-34px]";
+  const lgOverlapClass = "md:-ml-[22px]";
 
-  return (
-    <div className="flex flex-col shrink-0">
-      {label && <h4 className="text-[7px] font-bold text-emerald-300/50 uppercase tracking-wider ml-1 mb-0.5">{label}</h4>}
-      <div className="flex items-center">
-        {elements.map((el, idx) => {
-          const isLastElement = idx === elements.length - 1;
+  const renderElements = (items: any[], isCompressed: boolean) => (
+    <div className={`flex items-center ${isCompressed ? 'md:hidden' : 'hidden md:flex'}`}>
+        {items.map((el, idx) => {
+          const isLastElement = idx === items.length - 1;
           const isFirstInRun = idx === 0;
-          const zIndex = zIndices[idx];
+          
+          const zIndex = isCompressed ? zIndices[idx] : (idx + 10);
           const style = { zIndex };
-          const marginClass = idx === 0 ? '' : overlapClass;
+          // Apply margin to everything except the first item
+          const marginClass = idx === 0 ? '' : (isCompressed ? overlapClass : lgOverlapClass);
 
           if (el.type === 'dotted') {
             return (
@@ -69,16 +71,23 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
                 <div style={style} className={marginClass}>
                   <CardBase card={el.start} isStacked={true} isFirst={isFirstInRun} />
                 </div>
+                {/* Stack indicator */}
                 <div 
                   style={{ zIndex: zIndex + 1 }}
-                  className={`relative w-11 h-14 sm:w-13 sm:h-18 ${overlapClass}`}
+                  className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-10 md:h-14 ${overlapClass} shrink-0`}
                 >
-                  <div className="absolute top-[3px] left-[5px] w-full h-full bg-black/20 rounded-md border border-black/40 shadow-sm"></div>
-                  <div className="absolute top-[1.5px] left-[2.5px] w-full h-full bg-white/10 rounded-md border border-white/20 shadow-sm"></div>
-                  <div className="absolute top-0 left-0 w-full h-full bg-white/95 rounded-md border-[1.5px] border-slate-900 flex items-center justify-center gap-0.5 shadow-sm">
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
+                  {/* Bottom-most layer */}
+                  <div className="absolute left-[-3px] top-[3px] w-full h-full bg-white border border-black/30 rounded-md -z-20"></div>
+                  {/* Middle layer */}
+                  <div className="absolute left-[-1.5px] top-[1.5px] w-full h-full bg-white border border-black/30 rounded-md -z-10"></div>
+                  
+                  {/* Top layer */}
+                  <div className="w-full h-full bg-white rounded-md border-[1.5px] border-black/30 flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
+                    <div className="flex flex-col items-center gap-0.5 z-10">
+                       <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                       <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                       <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                    </div>
                   </div>
                 </div>
                 <div style={{ zIndex: zIndex + 2 }} className={overlapClass}>
@@ -90,11 +99,26 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
 
           return (
             <div key={idx} style={style} className={marginClass}>
-              <CardBase card={el.card} isStacked={!isLastElement} isFirst={isFirstInRun} isLast={isLastElement} />
+              <CardBase 
+                card={el.card} 
+                isStacked={!isLastElement} 
+                isFirst={isFirstInRun} 
+                isLast={isLastElement} 
+                variant={isCompressed ? 'standard' : 'compact'}
+              />
             </div>
           );
         })}
-      </div>
+    </div>
+  );
+
+  const fullElements = cards.map(c => ({ type: 'card', card: c }));
+
+  return (
+    <div className="flex flex-col shrink-0">
+      
+      {renderElements(elements, true)}
+      {renderElements(fullElements, false)}
     </div>
   );
 };

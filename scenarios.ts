@@ -5,7 +5,8 @@ import { sortHand, generateId } from './constants';
 export const SCENARIO_KEYS = {
   INITIAL: 'initial',
   MIDGAME: 'midgame',
-  ENDGAME: 'endgame'
+  ENDGAME: 'endgame',
+  MANY_RUNS: 'many_runs'
 } as const;
 
 export type ScenarioKey = typeof SCENARIO_KEYS[keyof typeof SCENARIO_KEYS];
@@ -269,11 +270,73 @@ const getEndGameScenario = (): GameState => {
   };
 };
 
+const getManyRunsScenario = (): GameState => {
+  const fullDeck = getDeck();
+  const players = createBasePlayers(4);
+
+  // Generate many runs for each player
+  const suits = [Suit.Hearts, Suit.Spades, Suit.Clubs, Suit.Diamonds];
+  
+  players.forEach((p, pIdx) => {
+    p.hasOpened = true;
+    p.runs = [];
+    
+    // Create 8 runs per player
+    for (let i = 0; i < 8; i++) {
+        const suit = suits[(i + pIdx) % 4];
+        // One very long run (15 cards)
+        if (i === 0) {
+            // A long run: A...3, then duplicate A...3 partly
+            // Just duplicate cards to make a long visual list. 
+            // Note: Logic allows duplicates in separate runs, but strict game logic forbids dupes in one run. 
+            // But for visual testing, we can force it or make a legal long run (2 decks).
+            // Let's just make a long sequence A..2 + A..5 using multiple decks.
+            // Since we use getDeck() which returns 1 deck, we might run out.
+            // Let's pretend cards for visual test.
+            const longRunCards = Array.from({length: 18}).map((_, idx) => {
+                const val = ['A','K','Q','J','10','9','8','7','6','5','4','3','2'][idx % 13];
+                return { 
+                    id: generateId(), 
+                    suit, 
+                    value: val, 
+                    isWild: false,
+                    rank: 100 - idx 
+                };
+            });
+            p.runs.push(createRun(longRunCards, true));
+        } else {
+            // Normal runs (3-5 cards)
+            const len = 3 + (i % 3);
+            const runCards = Array.from({length: len}).map((_, idx) => ({
+                 id: generateId(), suit, value: ['K','Q','J','10','9'][idx], isWild: false, rank: 10
+            }));
+            p.runs.push(createRun(runCards, true));
+        }
+    }
+  });
+
+  return {
+    players,
+    currentPlayerIndex: 0,
+    drawPile: [],
+    discardPile: [],
+    phase: 'play',
+    selectedInHand: new Set(),
+    nPickPreview: null,
+    lastDrawnCard: null,
+    isNPickActive: false,
+    isConfirmingDraw: false,
+    isSelectingRun: false,
+    runCreationAmbiguity: null
+  };
+};
+
 export const getScenario = (key: ScenarioKey): GameState => {
   switch (key) {
     case SCENARIO_KEYS.INITIAL: return getInitialScenario();
     case SCENARIO_KEYS.MIDGAME: return getMidGameScenario();
     case SCENARIO_KEYS.ENDGAME: return getEndGameScenario();
+    case SCENARIO_KEYS.MANY_RUNS: return getManyRunsScenario();
     default: return getInitialScenario();
   }
 };

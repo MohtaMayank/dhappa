@@ -12,6 +12,7 @@ interface CardBaseProps {
   className?: string;
   onClick?: () => void;
   showRepresented?: boolean;
+  variant?: 'standard' | 'compact';
 }
 
 const CardBase: React.FC<CardBaseProps> = ({ 
@@ -22,7 +23,8 @@ const CardBase: React.FC<CardBaseProps> = ({
   isSelected, 
   className = '', 
   onClick,
-  showRepresented = true
+  showRepresented = true,
+  variant = 'standard'
 }) => {
   const displaySuit = card.represents?.suit || card.suit;
   const displayValue = card.represents?.value || card.value;
@@ -33,24 +35,49 @@ const CardBase: React.FC<CardBaseProps> = ({
   const isStatic = card.wildType === WildType.Static;
 
   const bgClass = isWild 
-    ? (isStatic ? 'bg-blue-50 border-blue-400' : 'bg-purple-50 border-purple-400')
-    : 'bg-white border-slate-300';
+    ? (isStatic ? 'bg-blue-50 border-black/30' : 'bg-purple-50 border-black/30')
+    : 'bg-white border-black/30';
 
   const selectionClass = isSelected 
     ? 'ring-2 ring-yellow-400 shadow-xl' 
     : 'shadow-md';
 
+  // Size classes based on variant
+  // Standard: w-11 h-14 (mobile) -> md:w-16 md:h-24 (desktop)
+  // Compact: w-11 h-14 (mobile) -> md:w-10 md:h-14 (desktop)
+  const sizeClass = variant === 'standard'
+    ? 'w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24'
+    : 'w-11 h-14 sm:w-13 sm:h-18 md:w-10 md:h-14';
+
+  const cornerTextClass = variant === 'standard'
+    ? 'text-[10px] sm:text-xs md:text-sm'
+    : 'text-[10px] sm:text-xs md:text-sm';
+
+  const cornerSymbolClass = variant === 'standard'
+    ? 'text-[8px] sm:text-[10px] md:text-xs'
+    : 'text-[8px] sm:text-[10px] md:text-[10px]';
+    
+  const centerTextClass = variant === 'standard'
+    ? 'text-[14px] sm:text-lg md:text-2xl'
+    : 'md:hidden'; // Hide center on compact
+
+  const centerSymbolClass = variant === 'standard'
+    ? 'text-lg sm:text-xl md:text-3xl'
+    : 'md:hidden'; // Hide center on compact
+
+  const paddingClass = variant === 'compact' ? 'p-0.5 md:p-[1px]' : 'p-0.5';
+
   return (
     <div 
       onClick={onClick}
-      className={`relative w-11 h-14 sm:w-13 sm:h-18 rounded-md border-[1.5px] ${bgClass} ${selectionClass} ${className} transition-all duration-200 cursor-pointer overflow-hidden flex flex-col`}
+      className={`relative ${sizeClass} rounded-md border-[1.5px] ${bgClass} ${selectionClass} ${className} transition-all duration-200 cursor-pointer overflow-hidden flex flex-col`}
     >
       {/* Corner Value/Suit */}
-      <div className={`flex flex-col items-start leading-none p-0.5 z-10 ${colorClass}`}>
-        <span className="text-[10px] sm:text-xs font-black tracking-tighter uppercase">
+      <div className={`flex flex-col items-start leading-none ${paddingClass} z-10 ${colorClass}`}>
+        <span className={`${cornerTextClass} font-black tracking-tighter uppercase`}>
           {displayValue === 'Jo' ? 'J' : displayValue}
         </span>
-        <span className="text-[8px] sm:text-[10px] -mt-0.5">
+        <span className={`${cornerSymbolClass} -mt-0.5`}>
           {displayValue === 'Jo' ? '★' : symbol}
         </span>
       </div>
@@ -59,11 +86,11 @@ const CardBase: React.FC<CardBaseProps> = ({
       <div className={`flex-1 flex items-center justify-center ${colorClass} transition-opacity`}>
         {isWild ? (
            <div className="flex flex-col items-center">
-             <i className={`fa-solid ${isStatic ? 'fa-thumbtack' : 'fa-bolt-lightning'} text-[10px] mb-0.5 opacity-40`}></i>
-             <span className="text-[14px] sm:text-lg opacity-80">{symbol}</span>
+             <i className={`fa-solid ${isStatic ? 'fa-thumbtack' : 'fa-bolt-lightning'} text-[10px] md:text-sm mb-0.5 opacity-40`}></i>
+             <span className={`${centerTextClass} opacity-80`}>{symbol}</span>
            </div>
         ) : (
-          <span className="text-lg sm:text-xl opacity-20">{symbol}</span>
+          <span className={`${centerSymbolClass} opacity-20`}>{symbol}</span>
         )}
       </div>
 

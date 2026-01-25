@@ -73,12 +73,12 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
                   className={`relative w-12 h-14 sm:w-14 sm:h-18 md:w-10 md:h-14 ${overlapClass} shrink-0`}
                 >
                   {/* Bottom-most layer */}
-                  <div className="absolute left-[-3px] top-[3px] w-full h-full bg-white border border-black rounded-md -z-20"></div>
+                  <div className="absolute left-[-3px] top-[3px] w-full h-full bg-white border border-black/30 rounded-md -z-20"></div>
                   {/* Middle layer */}
-                  <div className="absolute left-[-1.5px] top-[1.5px] w-full h-full bg-white border border-black rounded-md -z-10"></div>
+                  <div className="absolute left-[-1.5px] top-[1.5px] w-full h-full bg-white border border-black/30 rounded-md -z-10"></div>
                   
                   {/* Top layer (Main Face) */}
-                  <div className="w-full h-full bg-white rounded-md border-[1.5px] border-black flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
+                  <div className="w-full h-full bg-white rounded-md border-[1.5px] border-black/30 flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
                     <div className="absolute top-0.5 left-0.5 right-0.5 bottom-0.5 border border-slate-100 rounded-sm"></div>
                     <div className="flex flex-col items-center gap-0.5 z-10">
                        <div className="w-3 h-0.5 bg-slate-300 rounded-full mb-0.5"></div>

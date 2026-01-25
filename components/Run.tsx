@@ -44,14 +44,13 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
   }, [data]);
 
   // Negative margin for stacking
-  const overlapClass = "ml-[-28px] sm:ml-[-34px] md:-ml-6";
+  const overlapClass = "ml-[-28px] sm:ml-[-34px] md:-ml-[22px]";
 
   return (
     <div 
       className={`flex flex-col shrink-0 cursor-pointer group select-none transition-transform active:scale-[0.98] ${className}`}
       onClick={onClick}
     >
-      {label && <h4 className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 mb-1">{label}</h4>}
       
       <div className="flex items-center relative py-1 h-16 sm:h-20">
         {elements.map((el, idx) => {
@@ -71,15 +70,16 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
                 {/* Arrow / Gap indicator */}
                 <div 
                   style={{ zIndex: idx + 11 }} 
-                  className={`relative w-12 h-14 sm:w-14 sm:h-18 md:w-8 md:h-11 ${overlapClass} bg-emerald-900 rounded-md border border-emerald-700 flex flex-col items-center justify-center shadow-lg`}
+                  className={`relative w-12 h-14 sm:w-14 sm:h-18 md:w-10 md:h-14 ${overlapClass} bg-white rounded-md border-[1.5px] border-slate-300 flex flex-col items-center justify-center shadow-sm`}
                 >
-                  <div className="absolute top-0.5 left-0.5 right-0.5 bottom-0.5 border border-emerald-800 rounded-sm"></div>
+                  <div className="absolute top-0.5 left-0.5 right-0.5 bottom-0.5 border border-slate-100 rounded-sm"></div>
                   <div className="flex flex-col items-center gap-0.5 z-10">
-                     <div className="w-3 h-0.5 bg-emerald-600 rounded-full mb-0.5"></div>
-                     <span className="text-[9px] font-black text-emerald-400">{el.length}</span>
+                     <div className="w-3 h-0.5 bg-slate-300 rounded-full mb-0.5"></div>
+                     <span className="text-[10px] font-black text-slate-400">{el.length}</span>
                   </div>
                   {/* Stack effect lines */}
-                  <div className="absolute -right-0.5 top-1 bottom-1 w-[1px] bg-emerald-950/50"></div>
+                  <div className="absolute -right-[1px] top-1 bottom-1 w-[1px] bg-slate-300/50"></div>
+                  <div className="absolute -right-[2px] top-1.5 bottom-1.5 w-[1px] bg-slate-300/30"></div>
                 </div>
 
                 {/* End of sequence */}

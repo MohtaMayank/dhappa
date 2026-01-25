@@ -41,9 +41,9 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
 
   // Mobile: w-11 (44px). Visible 16px -> overlap -28px
   // sm: w-13 (52px). Visible 18px -> overlap -34px
-  // md (Compact): w-8 (32px). Visible 8px -> overlap -24px
+  // md (Compact): w-10 (40px). Visible ~18px -> overlap -22px
   const overlapClass = "ml-[-28px] sm:ml-[-34px]";
-  const lgOverlapClass = "md:-ml-6";
+  const lgOverlapClass = "md:-ml-[22px]";
 
   const renderElements = (items: any[], isCompressed: boolean) => (
     <div className={`flex items-center ${isCompressed ? 'md:hidden' : 'hidden md:flex'}`}>
@@ -62,14 +62,13 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
                 </div>
                 <div 
                   style={{ zIndex: idx + 11 }}
-                  className={`relative w-11 h-14 sm:w-13 sm:h-18 ${overlapClass}`}
+                  className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-10 md:h-14 ${overlapClass} bg-white rounded-md border border-slate-300 flex flex-col items-center justify-center shadow-sm`}
                 >
-                  <div className="absolute top-[3px] left-[5px] w-full h-full bg-black/20 rounded-md border border-black/40 shadow-sm"></div>
-                  <div className="absolute top-[1.5px] left-[2.5px] w-full h-full bg-white/10 rounded-md border border-white/20 shadow-sm"></div>
-                  <div className="absolute top-0 left-0 w-full h-full bg-white/95 rounded-md border-[1.5px] border-slate-900 flex items-center justify-center gap-0.5 shadow-sm">
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
-                    <div className="w-1 h-1 rounded-full bg-black/60"></div>
+                  <div className="absolute top-[3px] left-[3px] w-full h-full bg-slate-100/50 rounded-md border border-slate-200 -z-10"></div>
+                  <div className="flex flex-col items-center gap-0.5">
+                     <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                     <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                     <div className="w-1 h-1 rounded-full bg-slate-400"></div>
                   </div>
                 </div>
                 <div style={{ zIndex: idx + 12 }} className={overlapClass}>
@@ -98,7 +97,7 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
 
   return (
     <div className="flex flex-col shrink-0">
-      {label && <h4 className="text-[7px] font-bold text-emerald-300/50 uppercase tracking-wider ml-1 mb-0.5">{label}</h4>}
+      
       {renderElements(elements, true)}
       {renderElements(fullElements, false)}
     </div>

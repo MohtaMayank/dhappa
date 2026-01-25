@@ -63,10 +63,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
 
                     return (
                         <div key={suit} className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 opacity-40">
-                            <span className={`${SUIT_COLORS[suit]} text-xs`}>{SUIT_SYMBOLS[suit]}</span>
-                            <span className="text-[8px] font-black text-white uppercase tracking-widest">{suit} SEQUENCE</span>
-                        </div>
+                        
                         <div className="flex flex-wrap gap-4">
                             {suitRuns.map((run) => {
                             const isValid = isSelectingMode && getRunValidity ? getRunValidity(run) : true;
@@ -81,7 +78,6 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                                 <Run 
                                 key={run.id} 
                                 data={displayCards} 
-                                label={run.isPure ? "PURE" : "MIXED"}
                                 onClick={() => onRunClick?.(run)}
                                 className={opacityClass}
                                 />
@@ -110,7 +106,6 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                                 <Run 
                                 key={run.id} 
                                 data={displayCards} 
-                                label={run.isPure ? "PURE" : "MIXED"}
                                 onClick={() => onRunClick?.(run)}
                                 className={opacityClass}
                                 />

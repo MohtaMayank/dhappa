@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Beads state and logs
+.beads/export-state/
+.beads/logs/

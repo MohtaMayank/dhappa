@@ -7,13 +7,14 @@ import TableCenter from './components/TableCenter';
 import PlayerBoard from './components/PlayerBoard';
 import DiscardNPicker from './components/DiscardNPicker';
 import DrawCardOverlay from './components/DrawCardOverlay';
+import GameMenu from './components/GameMenu';
 import { Team } from './types';
 
 const App: React.FC = () => {
   const { 
     players, currentPlayerIndex, phase, drawPile, discardPile, 
     initGame, drawFromDeck, selectCard, selectedInHand, discardCard,
-    createRun, addToRun, lastDrawnCard, closeDrawOverlay
+    createRun, addToRun, lastDrawnCard, closeDrawOverlay, godMode
   } = useGameStore();
 
   const [viewMode, setViewMode] = useState<'hand' | 'team_runs' | 'opponent_runs'>('hand');
@@ -26,7 +27,7 @@ const App: React.FC = () => {
   if (players.length === 0) return null;
 
   const currentPlayer = players[currentPlayerIndex];
-  const isMyTurn = currentPlayerIndex === 0;
+  const isMyTurn = godMode || currentPlayerIndex === 0;
 
   const handleRunClick = (runId: string) => {
     if (selectedInHand.size === 1) {
@@ -160,6 +161,8 @@ const App: React.FC = () => {
         onCancel={closeDrawOverlay}
         revealedCard={lastDrawnCard}
       />
+      
+      <GameMenu />
     </div>
   );
 };

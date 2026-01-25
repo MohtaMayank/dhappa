@@ -3,10 +3,16 @@
 The system SHALL provide a Debug Menu accessible to developers to manipulate the game state.
 
 #### Scenario: Accessing Debug Menu
-- **WHEN** the user presses the debug shortcut (e.g., `Ctrl+Shift+D`) or clicks the debug icon
-- **THEN** the Debug Menu overlay appears
-- **AND** it lists available Test Scenarios
-- **AND** it provides a toggle for "God Mode".
+- **WHEN** the user navigates to "Debug" within the Game Menu
+- **THEN** the Debug Menu controls appear (Scenarios, God Mode).
+
+### Requirement: Game Menu
+The system SHALL provide a unified Game Menu accessible via a persistent UI element on all devices.
+
+#### Scenario: Opening Game Menu
+- **WHEN** the user taps/clicks the "Menu" button (e.g., hamburger icon or gear)
+- **THEN** an overlay appears listing options: "New Game", "Share", and "Debug"
+- **AND** the game interaction behind the menu is paused/blocked.
 
 ### Requirement: God Mode
 The system SHALL allow a single user to control all players for testing purposes.

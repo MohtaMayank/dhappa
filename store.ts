@@ -2,9 +2,13 @@
 import { create } from 'zustand';
 import { GameState, Player, CardDef, Run, Team, GamePhase, Suit, WildType } from './types';
 import { createDeck, generateId, sortHand } from './constants';
+import { ScenarioKey, getScenario } from './scenarios';
 
 interface GameStore extends GameState {
+  godMode: boolean;
   initGame: (playerCount: number) => void;
+  loadScenario: (key: ScenarioKey) => void;
+  toggleGodMode: () => void;
   selectCard: (id: string) => void;
   drawFromDeck: () => void;
   pickFromDiscard: (n: number) => void;
@@ -26,6 +30,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   nPickPreview: null,
   lastDrawnCard: null,
   isNPickActive: false,
+  godMode: false,
 
   initGame: (playerCount: number) => {
     const deck = createDeck();
@@ -51,6 +56,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastDrawnCard: null
     });
   },
+
+  loadScenario: (key: ScenarioKey) => {
+    const scenarioState = getScenario(key);
+    set({ ...scenarioState, godMode: get().godMode });
+  },
+
+  toggleGodMode: () => set(state => ({ godMode: !state.godMode })),
 
   selectCard: (id: string) => {
     const { selectedInHand } = get();

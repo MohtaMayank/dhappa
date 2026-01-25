@@ -10,14 +10,18 @@ The system SHALL support loading predefined, deterministic game states.
 
 #### Scenario: Loading Mid-Game State
 - **WHEN** "Mid-Game State" is loaded
-- **THEN** at least one player has `hasOpened = true`
-- **AND** there are runs on the board
-- **AND** the discard pile contains a known sequence of cards.
+- **THEN** each team has at least one complete run (Ace to 3)
+- **AND** each team has additional mid-sized runs (4-8 cards) containing wildcards
+- **AND** smaller runs (3-4 cards) are present on the board
+- **AND** players have approximately 18 cards in hand
+- **AND** the discard pile contains ~15 cards.
 
 #### Scenario: Loading End-Game State
 - **WHEN** "End-Game State" is loaded
-- **THEN** one team has met the "3-Run Lock" condition (3 pure/valid runs)
-- **AND** the current player has a hand that can potentially win (e.g., 1 card left to discard).
+- **THEN** both teams have met the "3-Run Lock" condition (3 pure/valid runs)
+- **AND** the runs are complete sequences from Ace to 3, containing mixed static and flying wildcards
+- **AND** teammates (Players 2 & 3) have additional smaller runs containing static wildcards
+- **AND** all players have between 3 to 6 cards remaining in their hands.
 
 ### Requirement: Deck Consistency
 All loaded scenarios MUST maintain deck integrity.

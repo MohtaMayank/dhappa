@@ -11,10 +11,12 @@ To ensure the UI handles various game phases (Opening, Mid-game, End-game) corre
     - **Mid-Game:** Some runs opened, discard pile populated.
     - **End-Game:** Teams near winning conditions (3 runs), closing required.
 - Adds "God Mode" (Hotseat) to the Debug Menu, allowing the local user to control all players.
+- **NEW:** Adds a persistent "Game Menu" button/overlay accessible on mobile and desktop, serving as a hub for game options (New Game, Share) and nesting the Debug Menu.
 
 ## Impact
-- **Specs:** `ui` (Debug Menu), `dev` (Scenario Logic).
+- **Specs:** `ui` (Debug Menu, Game Menu), `dev` (Scenario Logic).
 - **Code:**
     - `store.ts`: Add `loadScenario` and `toggleGodMode`.
     - `scenarios.ts`: New file defining the deterministic states.
-    - `App.tsx`: UI for the Debug Menu.
+    - `App.tsx`: UI for the Debug Menu and Game Menu.
+    - `components/GameMenu.tsx`: New component.

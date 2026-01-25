@@ -53,7 +53,9 @@ const getInitialScenario = (): GameState => {
     nPickPreview: null,
     lastDrawnCard: null,
     isNPickActive: false,
-    isConfirmingDraw: false
+    isConfirmingDraw: false,
+    isSelectingRun: false,
+    runCreationAmbiguity: null
   };
 };
 
@@ -158,7 +160,9 @@ const getMidGameScenario = (): GameState => {
     nPickPreview: null,
     lastDrawnCard: null,
     isNPickActive: false,
-    isConfirmingDraw: false
+    isConfirmingDraw: false,
+    isSelectingRun: false,
+    runCreationAmbiguity: null
   };
 };
 
@@ -259,7 +263,9 @@ const getEndGameScenario = (): GameState => {
     nPickPreview: null,
     lastDrawnCard: null,
     isNPickActive: false,
-    isConfirmingDraw: false
+    isConfirmingDraw: false,
+    isSelectingRun: false,
+    runCreationAmbiguity: null
   };
 };
 

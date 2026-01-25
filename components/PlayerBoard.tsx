@@ -1,19 +1,34 @@
-
 import React from 'react';
-import { Player, Run as RunType, Suit } from '../types';
+import { Player, Run as RunType, Suit, CardDef } from '../types';
 import { SUIT_COLORS, SUIT_SYMBOLS } from '../constants';
+import { getRank } from '../gameLogic';
 import Run from './Run';
 
 interface PlayerBoardProps {
   players: Player[];
-  onRunClick?: (runId: string) => void;
+  onRunClick?: (run: RunType) => void;
+  isSelectingMode?: boolean;
+  getRunValidity?: (run: RunType) => boolean;
 }
 
 const PlayerBoard: React.FC<PlayerBoardProps> = ({ 
   players, 
-  onRunClick 
+  onRunClick,
+  isSelectingMode,
+  getRunValidity
 }) => {
   const suitOrder = [Suit.Hearts, Suit.Spades, Suit.Clubs, Suit.Diamonds];
+
+  // Helper to get value of run for sorting
+  // Logic: Max rank in run. Since store uses Ascending order, Max is last card (or wild at end).
+  // But wilds might be at end. Let's find max natural rank?
+  // If run is pure wild (rare/impossible), use 0.
+  const getRunValue = (run: RunType): number => {
+      const naturals = run.cards.filter(c => !c.isWild);
+      if (naturals.length === 0) return 0;
+      // In Ascending sort, last natural is highest
+      return Math.max(...naturals.map(c => getRank(c.value)));
+  };
 
   return (
     <section className="flex flex-col gap-10 py-4">
@@ -39,8 +54,11 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
             ) : (
               <div className="flex flex-col gap-6 ml-11">
                 {suitOrder.map((suit) => {
-                  const suitRuns = player.runs.filter(r => r.cards[0]?.suit === suit || r.cards[0]?.represents?.suit === suit);
+                  let suitRuns = player.runs.filter(r => r.cards[0]?.suit === suit || r.cards[0]?.represents?.suit === suit);
                   if (suitRuns.length === 0) return null;
+
+                  // Sort runs: Higher cards on Left (First in list)
+                  suitRuns = suitRuns.sort((a, b) => getRunValue(b) - getRunValue(a));
 
                   return (
                     <div key={suit} className="flex flex-col gap-2">
@@ -49,15 +67,25 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                         <span className="text-[8px] font-black text-white uppercase tracking-widest">{suit} SEQUENCE</span>
                       </div>
                       <div className="flex flex-wrap gap-4">
-                        {suitRuns.map((run) => (
-                          <Run 
-                            key={run.id} 
-                            data={run.cards} 
-                            label={run.isPure ? "PURE" : "MIXED"}
-                            onClick={() => onRunClick?.(run.id)}
-                            className="hover:scale-105 transition-transform"
-                          />
-                        ))}
+                        {suitRuns.map((run) => {
+                          const isValid = isSelectingMode && getRunValidity ? getRunValidity(run) : true;
+                          const opacityClass = isSelectingMode 
+                            ? (isValid ? 'ring-2 ring-emerald-400 animate-pulse cursor-pointer' : 'opacity-20 grayscale pointer-events-none') 
+                            : 'hover:scale-105 transition-transform';
+
+                          // Reverse cards for display (High to Low)
+                          const displayCards = [...run.cards].reverse();
+
+                          return (
+                            <Run 
+                              key={run.id} 
+                              data={displayCards} 
+                              label={run.isPure ? "PURE" : "MIXED"}
+                              onClick={() => onRunClick?.(run)}
+                              className={opacityClass}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   );

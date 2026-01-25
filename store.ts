@@ -1,11 +1,13 @@
-
 import { create } from 'zustand';
 import { GameState, Player, CardDef, Run, Team, GamePhase, Suit, WildType } from './types';
 import { createDeck, generateId, sortHand } from './constants';
 import { ScenarioKey, getScenario } from './scenarios';
+import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER } from './gameLogic';
 
 interface GameStore extends GameState {
   godMode: boolean;
+  isSelectingRun: boolean;
+  runCreationAmbiguity: { isOpen: boolean; cards: CardDef[]; headRank?: number; tailRank?: number } | null;
   initGame: (playerCount: number) => void;
   loadScenario: (key: ScenarioKey) => void;
   toggleGodMode: () => void;
@@ -13,8 +15,11 @@ interface GameStore extends GameState {
   drawFromDeck: () => void;
   pickFromDiscard: (n: number) => void;
   discardCard: (id: string) => void;
-  createRun: () => void;
-  addToRun: (runId: string) => void;
+  createRun: (options?: { preferHead?: boolean; cards?: CardDef[] }) => void;
+  resolveCreateRunAmbiguity: (direction: 'HEAD' | 'TAIL') => void;
+  cancelCreateRunAmbiguity: () => void;
+  addToRun: (runId: string, options?: { replaceDirection?: 'HEAD' | 'TAIL' }) => void;
+  setSelectingRun: (isSelecting: boolean) => void;
   nextTurn: () => void;
   setNPickPreview: (n: number | null) => void;
   closeDrawOverlay: () => void;
@@ -33,6 +38,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isNPickActive: false,
   godMode: false,
   isConfirmingDraw: false,
+  isSelectingRun: false,
+  runCreationAmbiguity: null,
 
   initGame: (playerCount: number) => {
     const deck = createDeck();
@@ -55,7 +62,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       discardPile: [deck.pop()!],
       phase: 'draw',
       selectedInHand: new Set(),
-      lastDrawnCard: null
+      lastDrawnCard: null,
+      runCreationAmbiguity: null
     });
   },
 
@@ -105,8 +113,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const remainingDiscard = discardPile.slice(0, -n);
     const bottomCard = picked[0];
 
-    // Rule: Must be able to play the bottom card immediately
-    // For prototype simplicity, we assume they can or we'll let them handle it
     const newPlayers = [...players];
     newPlayers[currentPlayerIndex] = {
       ...newPlayers[currentPlayerIndex],
@@ -145,26 +151,43 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  createRun: () => {
+  createRun: (options) => {
     const { selectedInHand, players, currentPlayerIndex } = get();
     const player = players[currentPlayerIndex];
-    const cardsInRun = player.hand.filter(c => selectedInHand.has(c.id));
+    const cardsInRun = options?.cards || player.hand.filter(c => selectedInHand.has(c.id));
     
     if (cardsInRun.length < 3) return;
 
-    // Determine if pure/set
-    const isPure = cardsInRun.every(c => !c.isWild);
-    const isSet = cardsInRun.every(c => c.value === cardsInRun[0].value) || 
-                  (cardsInRun.every(c => c.value === 'A' || c.value === '3') && isPure);
+    if (options?.preferHead === undefined) {
+        const ambiguity = checkRunAmbiguity(cardsInRun);
+        if (ambiguity === 'AMBIGUOUS_ENDS') {
+            // Need to calculate ranks for sequence ambiguity during creation too
+            const naturals = cardsInRun.filter(c => !c.isWild);
+            const sorted = [...naturals].sort((a, b) => (RANK_ORDER[a.value]||0) - (RANK_ORDER[b.value]||0));
+            const remaining = cardsInRun.filter(c => c.isWild).length - ( (RANK_ORDER[sorted[sorted.length-1].value] - RANK_ORDER[sorted[0].value]) - (sorted.length-1) );
+            
+            const headRank = RANK_ORDER[sorted[0].value] - remaining;
+            const tailRank = RANK_ORDER[sorted[sorted.length-1].value] + remaining;
+
+            set({ runCreationAmbiguity: { isOpen: true, cards: cardsInRun, headRank, tailRank } });
+            return;
+        }
+    }
+
+    const arrangedCards = arrangeRun(cardsInRun, options?.preferHead);
+
+    const isPure = arrangedCards.every(c => !c.isWild);
+    const isSet = arrangedCards.every(c => c.value === arrangedCards[0].value) || 
+                  (arrangedCards.every(c => c.value === 'A' || c.value === '3') && isPure);
 
     const newRun: Run = {
       id: generateId(),
-      cards: [...cardsInRun],
+      cards: arrangedCards,
       isPure,
       isSet
     };
 
-    const newHand = player.hand.filter(c => !selectedInHand.has(c.id));
+    const newHand = player.hand.filter(c => !cardsInRun.find(cr => cr.id === c.id));
     const newPlayers = [...players];
     newPlayers[currentPlayerIndex] = {
       ...player,
@@ -173,44 +196,127 @@ export const useGameStore = create<GameStore>((set, get) => ({
       hasOpened: player.hasOpened || isPure || (isSet && (newRun.cards[0].value === '3' || newRun.cards[0].value === 'A'))
     };
 
-    set({ players: newPlayers, selectedInHand: new Set() });
+    set({ players: newPlayers, selectedInHand: new Set(), runCreationAmbiguity: null });
   },
 
-  addToRun: (runId: string) => {
+  resolveCreateRunAmbiguity: (direction) => {
+      const { runCreationAmbiguity } = get();
+      if (!runCreationAmbiguity) return;
+      get().createRun({ preferHead: direction === 'HEAD', cards: runCreationAmbiguity.cards });
+  },
+
+  cancelCreateRunAmbiguity: () => {
+      set({ runCreationAmbiguity: null });
+  },
+
+  addToRun: (runId: string, options) => {
     const { selectedInHand, players, currentPlayerIndex } = get();
-    if (selectedInHand.size !== 1) return;
+    if (selectedInHand.size === 0) return;
 
-    const cardId = Array.from(selectedInHand)[0];
     const player = players[currentPlayerIndex];
-    const cardToAdd = player.hand.find(c => c.id === cardId)!;
+    const cardsToAdd = player.hand.filter(c => selectedInHand.has(c.id));
+    
+    let targetRun: Run | undefined;
+    let runOwnerIndex = -1;
+    let runIndex = -1;
 
-    const newPlayers = players.map(p => {
-      const runIndex = p.runs.findIndex(r => r.id === runId);
-      if (runIndex === -1) return p;
-
-      const newRuns = [...p.runs];
-      newRuns[runIndex] = {
-        ...newRuns[runIndex],
-        cards: [...newRuns[runIndex].cards, cardToAdd],
-        isPure: false // Adding might break purity if it's wild, but logic simplified here
-      };
-
-      return { ...p, runs: newRuns };
+    players.some((p, pIdx) => {
+      const rIdx = p.runs.findIndex(r => r.id === runId);
+      if (rIdx !== -1) {
+        targetRun = p.runs[rIdx];
+        runOwnerIndex = pIdx;
+        runIndex = rIdx;
+        return true;
+      }
+      return false;
     });
 
-    // Remove from hand
-    newPlayers[currentPlayerIndex] = {
-      ...newPlayers[currentPlayerIndex],
-      hand: player.hand.filter(c => c.id !== cardId)
-    };
+    if (!targetRun || runOwnerIndex === -1) return;
 
-    set({ players: newPlayers, selectedInHand: new Set() });
+    const validation = validateAddToRun(cardsToAdd, targetRun);
+
+    if (validation.type === 'INVALID') {
+        console.warn('Invalid Add to Run:', validation.reason);
+        return;
+    }
+
+    const newPlayers = [...players];
+    const newOwner = { ...newPlayers[runOwnerIndex] };
+    const newCurrentPlayer = { ...newPlayers[currentPlayerIndex] }; 
+    const newRun = { ...targetRun };
+
+    // Apply changes based on validation type
+    if (validation.type === 'EXTEND') {
+        const position = validation.position === 'AMBIGUOUS' ? options?.replaceDirection : validation.position;
+
+        if (!position) {
+            console.warn('Ambiguous Extension requires direction');
+            return;
+        }
+
+        if (position === 'HEAD') {
+            newRun.cards = [...validation.cards, ...newRun.cards];
+        } else {
+            newRun.cards = [...newRun.cards, ...validation.cards];
+        }
+    } else if (validation.type === 'REPLACE_FLYING') {
+       const jokerId = validation.cardToReturn.id;
+       newRun.cards = newRun.cards.map(c => c.id === jokerId ? cardsToAdd[0] : c);
+       newCurrentPlayer.hand = [...newCurrentPlayer.hand, validation.cardToReturn];
+    } else if (validation.type === 'REPLACE_STATIC') {
+       const displacedId = validation.displacedCard.id;
+       const position = validation.newPosition === 'AMBIGUOUS' ? options?.replaceDirection : validation.newPosition;
+       
+       if (!position) {
+           console.warn('Ambiguous Static Wild move requires direction');
+           return;
+       }
+
+       const newCards = newRun.cards.map(c => c.id === displacedId ? cardsToAdd[0] : c);
+       
+       if (position === 'HEAD') {
+           newRun.cards = [validation.displacedCard, ...newCards];
+       } else {
+           newRun.cards = [...newCards, validation.displacedCard];
+       }
+    }
+
+    newOwner.runs = [...newOwner.runs];
+    newOwner.runs[runIndex] = newRun;
+    newPlayers[runOwnerIndex] = newOwner;
+
+    if (runOwnerIndex === currentPlayerIndex) {
+        const updatedHand = newOwner.hand.filter(c => !selectedInHand.has(c.id));
+        if (validation.type === 'REPLACE_FLYING') {
+            updatedHand.push(validation.cardToReturn);
+        }
+        newPlayers[currentPlayerIndex] = {
+            ...newOwner,
+            hand: sortHand(updatedHand)
+        };
+    } else {
+        newPlayers[runOwnerIndex] = newOwner;
+        
+        let updatedHand = newCurrentPlayer.hand.filter(c => !selectedInHand.has(c.id));
+        if (validation.type === 'REPLACE_FLYING') {
+            updatedHand.push(validation.cardToReturn);
+        }
+        newPlayers[currentPlayerIndex] = {
+            ...newCurrentPlayer,
+            hand: sortHand(updatedHand)
+        };
+    }
+
+    set({ players: newPlayers, selectedInHand: new Set(), isSelectingRun: false });
   },
+
+  setSelectingRun: (isSelecting) => set({ isSelectingRun: isSelecting }),
 
   nextTurn: () => {
     set(state => ({
       currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
-      phase: 'draw'
+      phase: 'draw',
+      isSelectingRun: false
     }));
   },
 

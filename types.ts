@@ -58,4 +58,6 @@ export interface GameState {
   lastDrawnCard: CardDef | null;
   isNPickActive: boolean;
   isConfirmingDraw: boolean;
+  isSelectingRun: boolean;
+  runCreationAmbiguity: { isOpen: boolean; cards: CardDef[]; headRank?: number; tailRank?: number } | null;
 }

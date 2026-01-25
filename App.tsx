@@ -119,10 +119,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-dvh max-w-md mx-auto bg-emerald-900 shadow-2xl overflow-hidden border-x border-emerald-950 relative select-none">
+    <div className="flex flex-col h-dvh w-full lg:max-w-7xl mx-auto bg-emerald-900 shadow-2xl overflow-hidden border-x border-emerald-950 relative select-none">
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/felt.png')]"></div>
       
-      <header className="relative z-30 bg-black/40 backdrop-blur-md px-4 py-2 flex justify-between items-center border-b border-white/10">
+      <header className="relative z-30 bg-black/40 backdrop-blur-md px-4 py-2 flex justify-between items-center border-b border-white/10 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
           <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Dhappa Prototyper</span>
@@ -132,52 +132,82 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="relative flex-1 flex flex-col items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center p-8">
-           <TableCenter 
-                drawPileCount={drawPile.length} 
-                discardPile={discardPile} 
-                onDraw={() => setIsConfirmingDraw(true)}
-                onOpenDiscard={() => setIsNPickerOpen(true)}
-                isPlayerTurn={isMyTurn}
-                phase={phase}
-           />
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Desktop: Left Panel (My Team) */}
+        <aside className="hidden lg:flex flex-col w-1/4 bg-black/10 border-r border-white/5 overflow-y-auto p-4 custom-scrollbar">
+            <h2 className="text-xs font-black text-blue-300 uppercase tracking-widest mb-4 sticky top-0 bg-emerald-900/80 backdrop-blur-sm py-2 z-10">
+                My Team
+            </h2>
+            <PlayerBoard 
+                players={myTeamPlayers} 
+                onRunClick={handleRunClick}
+                isSelectingMode={isSelectingRun}
+                getRunValidity={getRunValidity}
+            />
+        </aside>
 
-           <div className="absolute top-8 left-1/2 -translate-x-1/2">
-             <PlayerAvatar player={players[2]} isCurrentTurn={currentPlayerIndex === 2} position="top" />
-           </div>
-           <div className="absolute top-1/2 left-4 -translate-y-1/2">
-             <PlayerAvatar player={players[3]} isCurrentTurn={currentPlayerIndex === 3} position="left" />
-           </div>
-           <div className="absolute top-1/2 right-4 -translate-y-1/2">
-             <PlayerAvatar player={players[1]} isCurrentTurn={currentPlayerIndex === 1} position="right" />
-           </div>
-        </div>
+        {/* Center Game Area */}
+        <main className="relative flex-1 flex flex-col items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center p-8">
+            <TableCenter 
+                    drawPileCount={drawPile.length} 
+                    discardPile={discardPile} 
+                    onDraw={() => setIsConfirmingDraw(true)}
+                    onOpenDiscard={() => setIsNPickerOpen(true)}
+                    isPlayerTurn={isMyTurn}
+                    phase={phase}
+            />
 
-        {viewMode !== 'hand' && (
-            <div className="absolute inset-0 z-40 bg-emerald-950/95 backdrop-blur-md p-4 overflow-y-auto animate-in slide-in-from-bottom duration-300">
-                <header className="flex justify-between items-center mb-4 sticky top-0 bg-emerald-950/80 py-2 z-50">
-                    <h2 className="text-xs font-black text-white uppercase tracking-widest">
-                        {viewMode === 'team_runs' ? "My Team's Table" : "Opponent's Table"}
-                    </h2>
-                    <button 
-                      onClick={() => { setViewMode('hand'); setSelectingRun(false); }} 
-                      className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-                    >
-                        <i className="fa-solid fa-xmark text-xs"></i>
-                    </button>
-                </header>
-                <PlayerBoard 
-                    players={viewMode === 'team_runs' ? myTeamPlayers : oppTeamPlayers} 
-                    onRunClick={handleRunClick}
-                    isSelectingMode={isSelectingRun}
-                    getRunValidity={getRunValidity}
-                />
+            <div className="absolute top-8 left-1/2 -translate-x-1/2">
+                <PlayerAvatar player={players[2]} isCurrentTurn={currentPlayerIndex === 2} position="top" />
             </div>
-        )}
-      </main>
+            <div className="absolute top-1/2 left-4 -translate-y-1/2">
+                <PlayerAvatar player={players[3]} isCurrentTurn={currentPlayerIndex === 3} position="left" />
+            </div>
+            <div className="absolute top-1/2 right-4 -translate-y-1/2">
+                <PlayerAvatar player={players[1]} isCurrentTurn={currentPlayerIndex === 1} position="right" />
+            </div>
+            </div>
 
-      <footer className="relative z-30 bg-black/70 border-t border-white/10 backdrop-blur-xl">
+            {/* Mobile: Overlay Board */}
+            {viewMode !== 'hand' && (
+                <div className="lg:hidden absolute inset-0 z-40 bg-emerald-950/95 backdrop-blur-md p-4 overflow-y-auto animate-in slide-in-from-bottom duration-300">
+                    <header className="flex justify-between items-center mb-4 sticky top-0 bg-emerald-950/80 py-2 z-50">
+                        <h2 className="text-xs font-black text-white uppercase tracking-widest">
+                            {viewMode === 'team_runs' ? "My Team's Table" : "Opponent's Table"}
+                        </h2>
+                        <button 
+                        onClick={() => { setViewMode('hand'); setSelectingRun(false); }} 
+                        className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                        >
+                            <i className="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </header>
+                    <PlayerBoard 
+                        players={viewMode === 'team_runs' ? myTeamPlayers : oppTeamPlayers} 
+                        onRunClick={handleRunClick}
+                        isSelectingMode={isSelectingRun}
+                        getRunValidity={getRunValidity}
+                    />
+                </div>
+            )}
+        </main>
+
+        {/* Desktop: Right Panel (Opponents) */}
+        <aside className="hidden lg:flex flex-col w-1/4 bg-black/10 border-l border-white/5 overflow-y-auto p-4 custom-scrollbar">
+            <h2 className="text-xs font-black text-red-300 uppercase tracking-widest mb-4 sticky top-0 bg-emerald-900/80 backdrop-blur-sm py-2 z-10">
+                Opponents
+            </h2>
+            <PlayerBoard 
+                players={oppTeamPlayers} 
+                onRunClick={handleRunClick}
+                isSelectingMode={isSelectingRun}
+                getRunValidity={getRunValidity}
+            />
+        </aside>
+      </div>
+
+      <footer className="relative z-30 bg-black/70 border-t border-white/10 backdrop-blur-xl shrink-0">
         <div className="flex flex-col gap-1 p-2">
           <div className="flex gap-2">
               <button 
@@ -200,7 +230,7 @@ const App: React.FC = () => {
 
               <button 
                   onClick={() => setViewMode('team_runs')}
-                  className={`flex-1 py-3 ${viewMode === 'team_runs' && !isSelectingRun ? 'bg-blue-600/40 border-blue-400' : 'bg-blue-600/20 border-blue-500/30'} border rounded-xl flex flex-col items-center gap-1 active:scale-95 transition-all`}
+                  className={`flex-1 lg:hidden py-3 ${viewMode === 'team_runs' && !isSelectingRun ? 'bg-blue-600/40 border-blue-400' : 'bg-blue-600/20 border-blue-500/30'} border rounded-xl flex flex-col items-center gap-1 active:scale-95 transition-all`}
               >
                   <i className="fa-solid fa-people-group text-blue-400 text-sm"></i>
                   <span className="text-[8px] font-black text-white uppercase tracking-widest">My Team</span>
@@ -208,7 +238,7 @@ const App: React.FC = () => {
               
               <button 
                   onClick={() => setViewMode('opponent_runs')}
-                  className={`flex-1 py-3 ${viewMode === 'opponent_runs' ? 'bg-red-600/40 border-red-400' : 'bg-red-600/20 border-red-500/30'} border rounded-xl flex flex-col items-center gap-1 active:scale-95 transition-all`}
+                  className={`flex-1 lg:hidden py-3 ${viewMode === 'opponent_runs' ? 'bg-red-600/40 border-red-400' : 'bg-red-600/20 border-red-500/30'} border rounded-xl flex flex-col items-center gap-1 active:scale-95 transition-all`}
               >
                   <i className="fa-solid fa-shield-halved text-red-400 text-sm"></i>
                   <span className="text-[8px] font-black text-white uppercase tracking-widest">Opponents</span>

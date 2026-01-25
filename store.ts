@@ -14,6 +14,7 @@ interface GameStore extends GameState {
   nextTurn: () => void;
   setNPickPreview: (n: number | null) => void;
   closeDrawOverlay: () => void;
+  setIsConfirmingDraw: (isConfirming: boolean) => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -26,6 +27,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   nPickPreview: null,
   lastDrawnCard: null,
   isNPickActive: false,
+  isConfirmingDraw: false,
 
   initGame: (playerCount: number) => {
     const deck = createDeck();
@@ -77,12 +79,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       drawPile: newDrawPile,
       players: newPlayers,
-      phase: 'play',
       lastDrawnCard: drawnCard
     });
   },
 
-  closeDrawOverlay: () => set({ lastDrawnCard: null }),
+  closeDrawOverlay: () => set({ lastDrawnCard: null, phase: 'play' }),
 
   pickFromDiscard: (n: number) => {
     const { discardPile, players, currentPlayerIndex, phase } = get();
@@ -201,5 +202,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }));
   },
 
-  setNPickPreview: (n) => set({ nPickPreview: n })
+  setNPickPreview: (n) => set({ nPickPreview: n }),
+  
+  setIsConfirmingDraw: (isConfirming) => set({ isConfirmingDraw: isConfirming })
 }));

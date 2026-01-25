@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CardDef } from '../types';
 import CardBase from './CardBase';
 
@@ -7,15 +6,40 @@ interface DrawCardOverlayProps {
   isOpen: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  onFinishReveal?: () => void;
   revealedCard: CardDef | null;
 }
 
-const DrawCardOverlay: React.FC<DrawCardOverlayProps> = ({ isOpen, onConfirm, onCancel, revealedCard }) => {
+const DrawCardOverlay: React.FC<DrawCardOverlayProps> = ({ 
+  isOpen, 
+  onConfirm, 
+  onCancel, 
+  onFinishReveal,
+  revealedCard 
+}) => {
+  const [animState, setAnimState] = useState<'idle' | 'revealing' | 'flying'>('idle');
+
+  useEffect(() => {
+    if (revealedCard) {
+      setAnimState('revealing');
+      const revealTimer = setTimeout(() => {
+        setAnimState('flying');
+        const flyTimer = setTimeout(() => {
+           if (onFinishReveal) onFinishReveal();
+        }, 600); 
+        return () => clearTimeout(flyTimer);
+      }, 1500); // 1.5s reveal
+      return () => clearTimeout(revealTimer);
+    } else {
+      setAnimState('idle');
+    }
+  }, [revealedCard, onFinishReveal]);
+
   if (!isOpen && !revealedCard) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-xs overflow-hidden">
+    <div className={`fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 transition-all duration-300 ${animState === 'flying' ? 'opacity-0' : 'animate-in fade-in'}`}>
+      <div className="relative w-full max-w-xs">
         {/* State 1: Confirmation Request */}
         {isOpen && !revealedCard && (
           <div className="bg-emerald-950 border border-white/20 rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200">
@@ -45,12 +69,12 @@ const DrawCardOverlay: React.FC<DrawCardOverlayProps> = ({ isOpen, onConfirm, on
 
         {/* State 2: Reveal the drawn card */}
         {revealedCard && (
-          <div className="flex flex-col items-center gap-8 animate-in zoom-in-75 duration-500">
+          <div className={`flex flex-col items-center gap-8 transition-all duration-500 ease-in-out ${animState === 'flying' ? 'translate-y-[40vh] scale-0' : 'animate-in zoom-in-75'}`}>
             <div className="relative">
               {/* Pulsing glow background */}
               <div className="absolute inset-0 bg-yellow-400/30 blur-3xl rounded-full scale-150 animate-pulse"></div>
               
-              <div className="relative z-10 transition-transform duration-1000">
+              <div className="relative z-10">
                 <CardBase 
                   card={revealedCard} 
                   isFirst={true} 
@@ -59,7 +83,7 @@ const DrawCardOverlay: React.FC<DrawCardOverlayProps> = ({ isOpen, onConfirm, on
               </div>
             </div>
 
-            <div className="text-center relative z-20">
+            <div className={`text-center relative z-20 transition-opacity duration-300 ${animState === 'flying' ? 'opacity-0' : 'opacity-100'}`}>
               <h2 className="text-yellow-400 font-black text-xl uppercase tracking-[0.2em] drop-shadow-lg animate-bounce">
                 YOU DREW
               </h2>

@@ -290,24 +290,24 @@ const getManyRunsScenario = (): GameState => {
     // Create 8 runs per player
     for (let i = 0; i < 8; i++) {
         const suit = suits[(i + pIdx) % 4];
-        // One very long run (15 cards)
+        // One long run (12 cards: A-3)
         if (i === 0) {
-            const longRunCards = Array.from({length: 18}).map((_, idx) => {
-                const val = ['A','K','Q','J','10','9','8','7','6','5','4','3'][idx % 12];
+            const values = ['A','K','Q','J','10','9','8','7','6','5','4','3'];
+            const longRunCards = values.map((val, idx) => {
                 return { 
                     id: generateId(), 
                     suit, 
                     value: val, 
-                    isWild: false,
-                    rank: 100 - idx 
+                    isWild: false
                 };
             });
             p.runs.push(createRun(longRunCards, true));
         } else {
             // Normal runs (3-5 cards)
             const len = 3 + (i % 3);
-            const runCards = Array.from({length: len}).map((_, idx) => ({
-                 id: generateId(), suit, value: ['K','Q','J','10','9'][idx], isWild: false, rank: 10
+            const values = ['K','Q','J','10','9'];
+            const runCards = values.slice(0, len).map((val, idx) => ({
+                 id: generateId(), suit, value: val, isWild: false
             }));
             p.runs.push(createRun(runCards, true));
         }

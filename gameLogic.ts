@@ -33,6 +33,10 @@ export function inferRunContext(runCards: CardDef[]): RunContext | null {
   const isSet = naturalCards.every(c => c.value === firstNatural.value);
 
   if (isSet && naturalCards.length >= 2) {
+      // Enforce no duplicate natural cards (same suit) in a set
+      const suits = naturalCards.map(c => c.suit);
+      if (new Set(suits).size !== suits.length) return null;
+
       return {
           type: 'SET',
           rank: getRank(firstNatural.value),
@@ -174,7 +178,9 @@ export function validateAddToRun(cardsToAdd: CardDef[], targetRun: Run): AddToRu
                       if (canHead) return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'HEAD' };
                       if (canTail) return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'TAIL' };
                       
-                      return { type: 'INVALID', reason: 'Static Wild cannot move to a valid position' };
+                      // Fallback: If it cannot move to a valid position (e.g. run is already 3-A), 
+                      // it sticks to the tail as an excess card.
+                      return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'TAIL' };
                   }
               }
           }
@@ -309,23 +315,33 @@ export interface RunStructure {
 }
 
 export function analyzeRunStructure(cards: CardDef[]): RunStructure | null {
-  // Try to find the longest valid prefix
-  for (let i = cards.length; i >= 0; i--) {
-    const subset = cards.slice(0, i);
-    const context = inferRunContext(subset);
-    
-    if (context) {
-      return {
-        active: context.cards,
-        excess: cards.slice(i),
-        type: context.type
-      };
+  let bestContext: RunContext | null = null;
+  let bestStart = 0;
+  let bestEnd = 0;
+
+  // Find the longest valid sub-segment
+  for (let start = 0; start < cards.length; start++) {
+    for (let end = start + 3; end <= cards.length; end++) {
+      const subset = cards.slice(start, end);
+      const context = inferRunContext(subset);
+      if (context) {
+        if (!bestContext || subset.length > (bestEnd - bestStart)) {
+          bestContext = context;
+          bestStart = start;
+          bestEnd = end;
+        }
+      }
     }
   }
 
-  // If no valid context found (e.g. less than 3 cards, or just wilds), return null or raw
-  // But existing runs in game should be valid. 
-  // If it fails, treat everything as excess?
+  if (bestContext) {
+    return {
+      active: bestContext.cards,
+      excess: [...cards.slice(0, bestStart), ...cards.slice(bestEnd)],
+      type: bestContext.type
+    };
+  }
+
   return null;
 }
 

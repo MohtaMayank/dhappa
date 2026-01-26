@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { GameState, Player, CardDef, Run, Team, GamePhase, Suit, WildType } from './types';
 import { createDeck, generateId, sortHand } from './constants';
 import { ScenarioKey, getScenario } from './scenarios';
-import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER, applyRepresentations } from './gameLogic';
+import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER, applyRepresentations, inferRunContext } from './gameLogic';
 
 interface GameStore extends GameState {
   godMode: boolean;
@@ -175,10 +175,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     const arrangedCards = arrangeRun(cardsInRun, options?.preferHead);
+    const context = inferRunContext(arrangedCards);
+
+    if (!context) {
+        console.warn('Invalid Run: Selected cards do not form a valid SET or SEQUENCE.');
+        return;
+    }
+
     const finalCards = applyRepresentations(arrangedCards);
 
     const isPure = finalCards.every(c => !c.isWild);
-    const isSet = finalCards.every(c => c.value === finalCards[0].value) || 
+    const isSet = context.type === 'SET' || 
                   (finalCards.every(c => c.value === 'A' || c.value === '3') && isPure);
 
     const newRun: Run = {

@@ -71,13 +71,10 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                                 ? (isValid ? 'ring-2 ring-emerald-400 animate-pulse cursor-pointer' : 'opacity-20 grayscale pointer-events-none') 
                                 : 'hover:scale-105 transition-transform';
 
-                            // Strict Descending Sort
-                            const displayCards = [...run.cards].sort((a,b) => getRank(b.value) - getRank(a.value));
-
                             return (
                                 <Run 
                                 key={run.id} 
-                                data={displayCards} 
+                                data={run.cards} 
                                 onClick={() => onRunClick?.(run)}
                                 className={opacityClass}
                                 />
@@ -99,13 +96,10 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                                 ? (isValid ? 'ring-2 ring-emerald-400 animate-pulse cursor-pointer' : 'opacity-20 grayscale pointer-events-none') 
                                 : 'hover:scale-105 transition-transform';
 
-                            // Strict Descending Sort
-                            const displayCards = [...run.cards].sort((a,b) => getRank(b.value) - getRank(a.value));
-
                             return (
                                 <Run 
                                 key={run.id} 
-                                data={displayCards} 
+                                data={run.cards} 
                                 onClick={() => onRunClick?.(run)}
                                 className={opacityClass}
                                 />

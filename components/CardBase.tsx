@@ -103,6 +103,16 @@ const CardBase: React.FC<CardBaseProps> = ({
         </div>
       )}
 
+      {/* Representation Badge for Wilds */}
+      {isWild && card.represents && showRepresented && (
+        <div className={`absolute top-1 right-1 px-1 py-0.5 rounded shadow-sm z-20 flex items-center gap-0.5 border border-black/10 ${isStatic ? 'bg-blue-100 text-blue-900' : 'bg-purple-100 text-purple-900'}`}>
+          <span className="text-[8px] font-black leading-none uppercase">{card.represents.value}</span>
+          <span className="text-[8px] leading-none opacity-60">
+            {SUIT_SYMBOLS[card.represents.suit]}
+          </span>
+        </div>
+      )}
+
       {/* Stacked effect: only show corner */}
       {isStacked && !isLast && (
         <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>

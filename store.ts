@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { GameState, Player, CardDef, Run, Team, GamePhase, Suit, WildType } from './types';
 import { createDeck, generateId, sortHand } from './constants';
 import { ScenarioKey, getScenario } from './scenarios';
-import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER } from './gameLogic';
+import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER, applyRepresentations } from './gameLogic';
 
 interface GameStore extends GameState {
   godMode: boolean;
@@ -175,14 +175,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     const arrangedCards = arrangeRun(cardsInRun, options?.preferHead);
+    const finalCards = applyRepresentations(arrangedCards);
 
-    const isPure = arrangedCards.every(c => !c.isWild);
-    const isSet = arrangedCards.every(c => c.value === arrangedCards[0].value) || 
-                  (arrangedCards.every(c => c.value === 'A' || c.value === '3') && isPure);
+    const isPure = finalCards.every(c => !c.isWild);
+    const isSet = finalCards.every(c => c.value === finalCards[0].value) || 
+                  (finalCards.every(c => c.value === 'A' || c.value === '3') && isPure);
 
     const newRun: Run = {
       id: generateId(),
-      cards: arrangedCards,
+      cards: finalCards,
       isPure,
       isSet
     };
@@ -280,6 +281,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
            newRun.cards = [...newCards, validation.displacedCard];
        }
     }
+
+    newRun.cards = applyRepresentations(newRun.cards);
 
     newOwner.runs = [...newOwner.runs];
     newOwner.runs[runIndex] = newRun;

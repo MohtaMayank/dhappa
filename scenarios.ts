@@ -215,8 +215,15 @@ const getEndGameScenario = (): GameState => {
 
   // Team A (Players 0 & 2)
   // Player 0: 3 Winning Runs (Lock Condition)
+  
+  // Custom Run for P0: Completed run with extra static wildcard
+  const p0Run1 = createRealisticRun(Suit.Hearts, [{ pos: 1, type: 'flying' }, { pos: 4, type: 'static' }]);
+  const extraWild = pluckTwo(fullDeck);
+  // extraWild.represents is undefined by default
+  p0Run1.push(extraWild);
+
   players[0].runs = [
-    createRun(createRealisticRun(Suit.Hearts, [{ pos: 1, type: 'flying' }, { pos: 4, type: 'static' }]), false),
+    createRun(p0Run1, false),
     createRun(createRealisticRun(Suit.Diamonds, [{ pos: 2, type: 'flying' }, { pos: 5, type: 'static' }]), false),
     createRun(createRealisticRun(Suit.Spades, []), true)
   ];
@@ -224,7 +231,7 @@ const getEndGameScenario = (): GameState => {
 
   // Player 2: Support Run with Static Wild
   players[2].runs = [
-    createRun(createSmallRun(Suit.Clubs, '4', 4, 1), false) // 4, 2(as 5), 6, 7
+    createRun(createSmallRun(Suit.Clubs, '4', 5, 2), false) // 5 cards (4,5,6,7,8), wild at pos 2 (6)
   ];
   players[2].hasOpened = true;
 
@@ -239,7 +246,7 @@ const getEndGameScenario = (): GameState => {
 
   // Player 3: Support Run with Static Wild
   players[3].runs = [
-    createRun(createSmallRun(Suit.Spades, '8', 5, 2), false) // 8, 9, 2(as 10), J, Q
+    createRun(createSmallRun(Suit.Spades, '9', 4, 1), false) // 4 cards (9,10,J,Q), wild at pos 1 (10)
   ];
   players[3].hasOpened = true;
 

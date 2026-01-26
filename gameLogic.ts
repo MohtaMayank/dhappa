@@ -328,3 +328,23 @@ export function analyzeRunStructure(cards: CardDef[]): RunStructure | null {
   // If it fails, treat everything as excess?
   return null;
 }
+
+export function applyRepresentations(cards: CardDef[]): CardDef[] {
+  const context = inferRunContext(cards);
+  if (!context) return cards;
+
+  return context.cards.map(item => {
+    if (item.card.isWild) {
+      return {
+        ...item.card,
+        represents: {
+          value: REVERSE_RANK[item.representedRank],
+          suit: item.representedSuit
+        }
+      };
+    }
+    // For natural cards, ensure represents is cleared if it was somehow set
+    const { represents, ...rest } = item.card;
+    return rest;
+  });
+}

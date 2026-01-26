@@ -128,8 +128,7 @@ const getMidGameScenario = (): GameState => {
   // P1: 1 Complete Run, 1 Mid Run (7 cards)
   players[1].runs = [
     createRun(createRealisticRun(Suit.Diamonds, [{ pos: 5, type: 'flying' }]), false), // A..3, one flying wild
-    createRun(createMidRun(Suit.Spades, '8', 7, [{ pos: 3, type: 'static' }, { pos: 6, type: 'static' }]), false) // 8, 7, 6, 2(5), 4, 3, 2(2-as-wild-in-seq? no 2 is static wild, so 2 represented as 2. Wait, 2 is wild.)
-    // Note: In createMidRun, the value '2' is the card value. If we use 2 as a wild representing 2, it's just a wild representing 2.
+    createRun(createMidRun(Suit.Spades, '9', 7, [{ pos: 3, type: 'static' }, { pos: 6, type: 'static' }]), false) // 9, 8, 7, 2(6), 5, 4, 3
   ];
   players[1].hasOpened = true;
 
@@ -231,7 +230,7 @@ const getEndGameScenario = (): GameState => {
 
   // Player 2: Support Run with Static Wild
   players[2].runs = [
-    createRun(createSmallRun(Suit.Clubs, '4', 5, 2), false) // 5 cards (4,5,6,7,8), wild at pos 2 (6)
+    createRun(createSmallRun(Suit.Clubs, '7', 5, 2), false) // 5 cards (7,6,5,4,3), wild at pos 2 (5)
   ];
   players[2].hasOpened = true;
 
@@ -246,7 +245,7 @@ const getEndGameScenario = (): GameState => {
 
   // Player 3: Support Run with Static Wild
   players[3].runs = [
-    createRun(createSmallRun(Suit.Spades, '9', 4, 1), false) // 4 cards (9,10,J,Q), wild at pos 1 (10)
+    createRun(createSmallRun(Suit.Spades, '9', 5, 1), false) // 5 cards (9,8,7,6,5), wild at pos 1 (8)
   ];
   players[3].hasOpened = true;
 

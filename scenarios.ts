@@ -92,7 +92,7 @@ const getMidGameScenario = (): GameState => {
 
   // Helper for mid-sized runs with wilds
   const createMidRun = (suit: Suit, startVal: string, length: number, wildPositions: { pos: number, type: 'flying' | 'static' }[]): CardDef[] => {
-    const allValues = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2'];
+    const allValues = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3'];
     const startIdx = allValues.indexOf(startVal);
     const runValues = allValues.slice(startIdx, startIdx + length);
 
@@ -200,7 +200,7 @@ const getEndGameScenario = (): GameState => {
 
   // Helper for smaller runs (e.g. 4-5-6-7)
   const createSmallRun = (suit: Suit, startVal: string, length: number, wildPos: number = -1): CardDef[] => {
-    const allValues = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2'];
+    const allValues = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3'];
     const startIdx = allValues.indexOf(startVal);
     const runValues = allValues.slice(startIdx, startIdx + length);
     
@@ -293,15 +293,8 @@ const getManyRunsScenario = (): GameState => {
         const suit = suits[(i + pIdx) % 4];
         // One very long run (15 cards)
         if (i === 0) {
-            // A long run: A...3, then duplicate A...3 partly
-            // Just duplicate cards to make a long visual list. 
-            // Note: Logic allows duplicates in separate runs, but strict game logic forbids dupes in one run. 
-            // But for visual testing, we can force it or make a legal long run (2 decks).
-            // Let's just make a long sequence A..2 + A..5 using multiple decks.
-            // Since we use getDeck() which returns 1 deck, we might run out.
-            // Let's pretend cards for visual test.
             const longRunCards = Array.from({length: 18}).map((_, idx) => {
-                const val = ['A','K','Q','J','10','9','8','7','6','5','4','3','2'][idx % 13];
+                const val = ['A','K','Q','J','10','9','8','7','6','5','4','3'][idx % 12];
                 return { 
                     id: generateId(), 
                     suit, 

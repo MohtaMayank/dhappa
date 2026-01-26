@@ -35,7 +35,7 @@ const CardBase: React.FC<CardBaseProps> = ({
   const isStatic = card.wildType === WildType.Static;
 
   const bgClass = isWild 
-    ? (isStatic ? 'bg-blue-50 border-black/30' : 'bg-purple-50 border-black/30')
+    ? (isStatic ? 'bg-pink-100/60 border-pink-300' : 'bg-purple-100/60 border-purple-300')
     : 'bg-white border-black/30';
 
   const selectionClass = isSelected 
@@ -99,16 +99,6 @@ const CardBase: React.FC<CardBaseProps> = ({
         <div className={`absolute bottom-0 right-0 left-0 h-1.5 ${isStatic ? 'bg-blue-500' : 'bg-purple-500'} flex items-center justify-center`}>
           <span className="text-[6px] text-white font-black uppercase tracking-tighter">
             {isStatic ? 'STATIC' : 'FLYING'}
-          </span>
-        </div>
-      )}
-
-      {/* Representation Badge for Wilds */}
-      {isWild && card.represents && showRepresented && (
-        <div className={`absolute top-1 right-1 px-1 py-0.5 rounded shadow-sm z-20 flex items-center gap-0.5 border border-black/10 ${isStatic ? 'bg-blue-100 text-blue-900' : 'bg-purple-100 text-purple-900'}`}>
-          <span className="text-[8px] font-black leading-none uppercase">{card.represents.value}</span>
-          <span className="text-[8px] leading-none opacity-60">
-            {SUIT_SYMBOLS[card.represents.suit]}
           </span>
         </div>
       )}

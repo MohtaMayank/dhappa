@@ -35,7 +35,7 @@ const CardBase: React.FC<CardBaseProps> = ({
   const isStatic = card.wildType === WildType.Static;
 
   const bgClass = isWild 
-    ? (isStatic ? 'bg-pink-100/60 border-pink-300' : 'bg-purple-100/60 border-purple-300')
+    ? (isStatic ? 'bg-pink-50 border-pink-200' : 'bg-purple-50 border-purple-200')
     : 'bg-white border-black/30';
 
   const selectionClass = isSelected 

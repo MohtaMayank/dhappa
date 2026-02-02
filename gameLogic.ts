@@ -120,71 +120,85 @@ export function validateAddToRun(cardsToAdd: CardDef[], targetRun: Run): AddToRu
 
   // SEQUENCE Extension
   if (context.type === 'SEQUENCE') {
-      const lastRank = context.cards[context.cards.length - 1].representedRank;
-      const nextRank = lastRank + 1;
+      const targetSuit = context.suit!;
       
+      // Filter out non-matching naturals
+      const validSuit = cardsToAdd.every(c => c.isWild || c.suit === targetSuit);
+      if (!validSuit) return { type: 'INVALID', reason: 'Cards do not match run suit' };
+
+      // 1. Single Card Replace Logic (Keep existing logic)
       if (cardsToAdd.length === 1) {
           const card = cardsToAdd[0];
-          const cardRank = card.isWild ? -1 : getRank(card.value);
-          
-          let canTail = false;
-          let canHead = false;
-
-          // Check TAIL
-          if (nextRank <= 14) {
-              if (card.isWild || (card.suit === context.suit && cardRank === nextRank)) {
-                  canTail = true;
-              }
-          }
-
-          // Check HEAD
-          const firstRank = context.cards[0].representedRank;
-          const prevRank = firstRank - 1;
-          if (prevRank >= 3) {
-              if (card.isWild || (card.suit === context.suit && cardRank === prevRank)) {
-                  canHead = true;
-              }
-          }
-
-          if (canTail && canHead) {
-              return { type: 'EXTEND', cards: cardsToAdd, position: 'AMBIGUOUS', headRank: prevRank, tailRank: nextRank };
-          }
-          if (canTail) return { type: 'EXTEND', cards: cardsToAdd, position: 'TAIL' };
-          if (canHead) return { type: 'EXTEND', cards: cardsToAdd, position: 'HEAD' };
-      }
-  }
-
-  // REPLACE
-  if (cardsToAdd.length === 1) {
-      const card = cardsToAdd[0];
-      if (card.isWild) return { type: 'INVALID', reason: 'Cannot replace with a Wild' };
-
-      for (const item of context.cards) {
-          if (item.card.isWild) {
-              const rankMatch = item.representedRank === getRank(card.value);
-              const suitMatch = context.type === 'SET' ? true : item.representedSuit === card.suit;
-              
-              if (rankMatch && suitMatch) {
-                  if (item.card.wildType === WildType.Flying) {
-                      return { type: 'REPLACE_FLYING', cardToReturn: item.card };
-                  } else if (item.card.wildType === WildType.Static) {
-                      const canHead = canExtendSequence(context, 'HEAD');
-                      const canTail = canExtendSequence(context, 'TAIL');
-
-                      const headRank = context.cards[0].representedRank - 1;
-                      const tailRank = context.cards[context.cards.length - 1].representedRank + 1;
+          // Check for Replace first (if natural)
+          if (!card.isWild) {
+               for (const item of context.cards) {
+                  if (item.card.isWild) {
+                      const rankMatch = item.representedRank === getRank(card.value);
+                      const suitMatch = item.representedSuit === card.suit;
                       
-                      if (canHead && canTail) return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'AMBIGUOUS', headRank, tailRank };
-                      if (canHead) return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'HEAD' };
-                      if (canTail) return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'TAIL' };
-                      
-                      // Fallback: If it cannot move to a valid position (e.g. run is already 3-A), 
-                      // it sticks to the tail as an excess card.
-                      return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'TAIL' };
+                      if (rankMatch && suitMatch) {
+                          if (item.card.wildType === WildType.Flying) {
+                              return { type: 'REPLACE_FLYING', cardToReturn: item.card };
+                          } else if (item.card.wildType === WildType.Static) {
+                              const canHead = canExtendSequence(context, 'HEAD');
+                              const canTail = canExtendSequence(context, 'TAIL');
+                              const headRank = context.cards[0].representedRank - 1;
+                              const tailRank = context.cards[context.cards.length - 1].representedRank + 1;
+                              
+                              if (canHead && canTail) return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'AMBIGUOUS', headRank, tailRank };
+                              if (canHead) return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'HEAD' };
+                              if (canTail) return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'TAIL' };
+                              return { type: 'REPLACE_STATIC', displacedCard: item.card, newPosition: 'TAIL' };
+                          }
+                      }
                   }
               }
           }
       }
+
+      // 2. Multi-card / Single-card Extend Logic
+      // Try arranging the new cards to see if they form a valid block
+      
+      const candidate1 = arrangeRun(cardsToAdd, false);
+      const candidate2 = arrangeRun(cardsToAdd, true);
+
+      // Helper to check if a combined sequence is valid
+      const checkCombined = (combined: CardDef[]) => {
+          const c = inferRunContext(combined);
+          return !!c && c.type === 'SEQUENCE' && c.cards.length === combined.length;
+      };
+
+      // Check TAIL Extension
+      const tail1 = checkCombined([...targetRun.cards, ...candidate1]);
+      const tail2 = checkCombined([...targetRun.cards, ...candidate2]);
+      const canTail = tail1 || tail2;
+      const cardsForTail = tail1 ? candidate1 : candidate2;
+
+      // Check HEAD Extension
+      const head1 = checkCombined([...candidate1, ...targetRun.cards]);
+      const head2 = checkCombined([...candidate2, ...targetRun.cards]);
+      const canHead = head1 || head2;
+      const cardsForHead = head1 ? candidate1 : candidate2;
+
+      if (canHead && canTail) {
+          // Special ambiguity check
+          const arrangedForHead = cardsForHead;
+          const arrangedForTail = cardsForTail;
+          
+          const headRank = context.cards[0].representedRank - arrangedForHead.length;
+          const tailRank = context.cards[context.cards.length-1].representedRank + arrangedForTail.length;
+          
+          return { 
+              type: 'EXTEND', 
+              cards: arrangedForHead, 
+              position: 'AMBIGUOUS',
+              headRank,
+              tailRank
+          };
+      }
+
+      if (canTail) return { type: 'EXTEND', cards: cardsForTail, position: 'TAIL' };
+      if (canHead) return { type: 'EXTEND', cards: cardsForHead, position: 'HEAD' };
   }
 
   return { type: 'INVALID', reason: 'Does not fit run' };

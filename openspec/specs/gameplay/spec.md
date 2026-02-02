@@ -4,16 +4,21 @@
 TBD - created by archiving change add-to-run-action. Update Purpose after archive.
 ## Requirements
 ### Requirement: Add Cards to Existing Runs
-Players SHALL be able to add one or more cards from their hand to their team's existing runs during their turn.
+Players SHALL be able to add one or more cards from their hand to their team's existing runs during their turn, provided they have "Opened".
 
-#### Scenario: Extending a run
-- **WHEN** a player selects card(s) that legally extend a run
-- **AND** targets that run
+#### Scenario: Extending a run with multiple cards
+- **WHEN** a player selects multiple cards that legally extend a run (e.g., `4H, 5H` to a `6H, 7H` run)
+- **AND** the player has Opened
 - **THEN** the cards are removed from the hand and appended/prepended to the run.
 
-#### Scenario: Invalid extension
-- **WHEN** a player attempts to add card(s) that break the run's sequence or suit
-- **THEN** the action is prevented.
+#### Scenario: Restriction before Opening
+- **WHEN** a player has NOT "Opened" (played their first Pure Run/Set)
+- **THEN** they CANNOT add cards to any existing runs (their own or teammates).
+- **AND** the "Add to Run" action is disabled or blocked.
+
+#### Scenario: Teammate Interaction
+- **WHEN** a player has Opened
+- **THEN** they can add cards to ANY run belonging to their team (their own or their teammate's).
 
 ### Requirement: Flying Wildcard Replacement
 Players SHALL be able to replace a Flying Wild (Joker) in a run with the natural card it represents.

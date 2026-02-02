@@ -56,7 +56,12 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                 {/* Mobile View: Grouped by Suit */}
                 <div className="flex flex-col gap-6 md:hidden">
                     {suitOrder.map((suit) => {
-                    let suitRuns = player.runs.filter(r => r.cards[0]?.suit === suit || r.cards[0]?.represents?.suit === suit);
+                    let suitRuns = player.runs.filter(r => {
+                        // Use represented suit if available (for wildcards at start), otherwise natural suit
+                        // This prevents runs from appearing in multiple groups if natural != represented
+                        const effectiveSuit = r.cards[0]?.represents?.suit || r.cards[0]?.suit;
+                        return effectiveSuit === suit;
+                    });
                     if (suitRuns.length === 0) return null;
 
                     suitRuns = suitRuns.sort((a, b) => getRunValue(b) - getRunValue(a));

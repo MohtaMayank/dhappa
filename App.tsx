@@ -103,6 +103,12 @@ const App: React.FC = () => {
 
   const getRunValidity = (run: Run): boolean => {
       if (selectedInHand.size === 0) return false;
+      if (!currentPlayer.hasOpened) return false;
+      
+      // Check if run belongs to my team
+      const runOwner = players.find(p => p.runs.some(r => r.id === run.id));
+      if (!runOwner || runOwner.team !== currentPlayer.team) return false;
+
       const cardsToAdd = currentPlayer.hand.filter(c => selectedInHand.has(c.id));
       return validateAddToRun(cardsToAdd, run).type !== 'INVALID';
   };
@@ -230,7 +236,7 @@ const App: React.FC = () => {
               
               <button 
                   onClick={toggleSelectionMode}
-                  disabled={!isMyTurn || phase !== 'play' || selectedInHand.size === 0}
+                  disabled={!isMyTurn || phase !== 'play' || selectedInHand.size === 0 || !currentPlayer.hasOpened}
                   className={`flex-1 py-3 ${isSelectingRun ? 'bg-emerald-500/40 border-emerald-400' : 'bg-emerald-600/20 border-emerald-500/30'} border rounded-xl flex flex-col items-center gap-1 disabled:opacity-20 active:scale-95 transition-all`}
               >
                   <i className="fa-solid fa-layer-group text-emerald-400 text-sm"></i>

@@ -85,7 +85,6 @@ const App: React.FC = () => {
     // Valid and unambiguous
     addToRun(run.id);
     setSelectingRun(false);
-    setViewMode('hand');
   };
 
   const resolveAddToRunAmbiguity = (direction: 'HEAD' | 'TAIL') => {
@@ -93,7 +92,6 @@ const App: React.FC = () => {
       addToRun(addToRunAmbiguity.runId, { replaceDirection: direction });
       setAddToRunAmbiguity(null);
       setSelectingRun(false);
-      setViewMode('hand');
   };
 
   const getRunValidity = (run: Run): boolean => {
@@ -280,7 +278,11 @@ const App: React.FC = () => {
       {isNPickerOpen && (
           <DiscardNPicker 
             pile={discardPile} 
-            onPick={(n) => { useGameStore.getState().pickFromDiscard(n); setIsNPickerOpen(false); }} 
+            onPick={(n) => { 
+                useGameStore.getState().pickFromDiscard(n); 
+                setIsNPickerOpen(false); 
+                setViewMode('team_runs');
+            }} 
             onClose={() => setIsNPickerOpen(false)}
             canPick={isMyTurn && phase === 'draw'}
           />
@@ -290,7 +292,10 @@ const App: React.FC = () => {
         isOpen={!!lastDrawnCard || isConfirmingDraw} 
         onConfirm={handleConfirmDraw} 
         onCancel={() => setIsConfirmingDraw(false)}
-        onFinishReveal={closeDrawOverlay}
+        onFinishReveal={() => {
+            closeDrawOverlay();
+            setViewMode('team_runs');
+        }}
         revealedCard={lastDrawnCard}
       />
       <GameMenu />

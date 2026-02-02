@@ -12,9 +12,14 @@ interface RunProps {
 }
 
 const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onClick }) => {
+  // We want to display runs in Descending order (High to Low, e.g. K, Q, J)
+  // The store maintains Ascending order (J, Q, K).
+  // So we reverse the data for display purposes.
+  const displayData = useMemo(() => [...data].reverse(), [data]);
+
   const elements = useMemo(() => {
     const result: any[] = [];
-    const n = data.length;
+    const n = displayData.length;
     if (n === 0) return [];
 
     let i = 0;
@@ -22,11 +27,11 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
       // 1. Check if current index is an Anchor
       const isStart = i === 0;
       const isEnd = i === n - 1;
-      const isWild = data[i].isWild;
+      const isWild = displayData[i].isWild;
       const isAnchor = isStart || isEnd || isWild;
 
       if (isAnchor) {
-        result.push({ type: 'card', card: data[i], originalIndex: i });
+        result.push({ type: 'card', card: displayData[i], originalIndex: i });
         i++;
         continue;
       }
@@ -35,7 +40,7 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
       // Find the next Anchor index.
       let nextAnchorIdx = -1;
       for (let j = i; j < n; j++) {
-        if (j === n - 1 || data[j].isWild) {
+        if (j === n - 1 || displayData[j].isWild) {
           nextAnchorIdx = j;
           break;
         }
@@ -51,19 +56,19 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
         // Collapse
         result.push({ 
           type: 'sequence', 
-          start: data[i], 
-          end: data[nextAnchorIdx - 1], 
+          start: displayData[i], 
+          end: displayData[nextAnchorIdx - 1], 
           length: gapLength 
         });
         i = nextAnchorIdx; // Skip to the anchor
       } else {
         // Gap of 1. Just render the card.
-        result.push({ type: 'card', card: data[i], originalIndex: i });
+        result.push({ type: 'card', card: displayData[i], originalIndex: i });
         i++;
       }
     }
     return result;
-  }, [data]);
+  }, [displayData]);
 
   const zIndices = useMemo(() => {
     let current = 10;

@@ -87,7 +87,7 @@ const getMidGameScenario = (): GameState => {
         };
       }
       return pluckCard(fullDeck, v, suit)!;
-    }).filter(Boolean);
+    }).filter(Boolean).reverse();
   };
 
   // Helper for mid-sized runs with wilds
@@ -103,7 +103,7 @@ const getMidGameScenario = (): GameState => {
             return { ...card, represents: { value: v, suit } };
         }
         return pluckCard(fullDeck, v, suit)!;
-    });
+    }).reverse();
   };
 
   const players = createBasePlayers(4);
@@ -194,7 +194,7 @@ const getEndGameScenario = (): GameState => {
         };
       }
       return pluckCard(fullDeck, v, suit)!;
-    }).filter(Boolean);
+    }).filter(Boolean).reverse();
   };
 
   // Helper for smaller runs (e.g. 4-5-6-7)
@@ -209,7 +209,7 @@ const getEndGameScenario = (): GameState => {
         return { ...card, represents: { value: v, suit } };
       }
       return pluckCard(fullDeck, v, suit)!;
-    });
+    }).reverse();
   };
 
   // Team A (Players 0 & 2)
@@ -300,7 +300,7 @@ const getManyRunsScenario = (): GameState => {
                     value: val, 
                     isWild: false
                 };
-            });
+            }).reverse();
             p.runs.push(createRun(longRunCards, true));
         } else {
             // Normal runs (3-5 cards)
@@ -308,7 +308,7 @@ const getManyRunsScenario = (): GameState => {
             const values = ['K','Q','J','10','9'];
             const runCards = values.slice(0, len).map((val, idx) => ({
                  id: generateId(), suit, value: val, isWild: false
-            }));
+            })).reverse();
             p.runs.push(createRun(runCards, true));
         }
     }

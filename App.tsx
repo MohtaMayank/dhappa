@@ -85,6 +85,12 @@ const App: React.FC = () => {
     // Valid and unambiguous
     addToRun(run.id);
     setSelectingRun(false);
+    
+    // Ensure we don't drop to hand view if we were somehow there (safety check)
+    // If we are in team_runs or opponent_runs, stay there.
+    if (viewMode === 'hand') {
+        setViewMode('team_runs');
+    }
   };
 
   const resolveAddToRunAmbiguity = (direction: 'HEAD' | 'TAIL') => {
@@ -115,9 +121,8 @@ const App: React.FC = () => {
           // Auto-open team view if closed
           if (viewMode === 'hand') setViewMode('team_runs');
       } else {
-          // If cancelling, maybe go back to hand?
-          // setViewMode('hand'); 
-          // Let's stay in view to allow looking around, user can close manually.
+          // If cancelling, stay in current view to allow looking around.
+          // User can close manually.
       }
   };
 

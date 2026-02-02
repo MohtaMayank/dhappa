@@ -25,6 +25,7 @@ interface GameStore extends GameState {
   closeDrawOverlay: () => void;
   setIsConfirmingDraw: (isConfirming: boolean) => void;
   isValidNPick: (n: number) => boolean;
+  mustPlayCard: string | null;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -41,6 +42,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isConfirmingDraw: false,
   isSelectingRun: false,
   runCreationAmbiguity: null,
+  mustPlayCard: null,
 
   initGame: (playerCount: number) => {
     const deck = createDeck();
@@ -64,19 +66,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
       phase: 'draw',
       selectedInHand: new Set(),
       lastDrawnCard: null,
-      runCreationAmbiguity: null
+      runCreationAmbiguity: null,
+      mustPlayCard: null
     });
   },
 
   loadScenario: (key: ScenarioKey) => {
     const scenarioState = getScenario(key);
-    set({ ...scenarioState, godMode: get().godMode });
+    set({ ...scenarioState, godMode: get().godMode, mustPlayCard: null });
   },
 
   toggleGodMode: () => set(state => ({ godMode: !state.godMode })),
 
   selectCard: (id: string) => {
-    const { selectedInHand } = get();
+    const { selectedInHand, mustPlayCard } = get();
+    
+    // Prevent deselecting the mustPlayCard
+    if (mustPlayCard === id && selectedInHand.has(id)) {
+        return;
+    }
+
     const newSelected = new Set(selectedInHand);
     if (newSelected.has(id)) newSelected.delete(id);
     else newSelected.add(id);
@@ -126,13 +135,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players: newPlayers,
       phase: 'play',
       isNPickActive: false,
-      selectedInHand: new Set([bottomCard.id]) // Auto-select the bottom card
+      selectedInHand: new Set([bottomCard.id]), // Auto-select the bottom card
+      mustPlayCard: bottomCard.id
     });
   },
 
   discardCard: (id: string) => {
-    const { players, currentPlayerIndex, discardPile, phase } = get();
+    const { players, currentPlayerIndex, discardPile, phase, mustPlayCard } = get();
     if (phase !== 'play') return;
+    if (mustPlayCard) return; // Prevent discard if constraint active
 
     const player = players[currentPlayerIndex];
     const cardToDiscard = player.hand.find(c => c.id === id);
@@ -207,7 +218,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       hasOpened: player.hasOpened || isPure || (isSet && (newRun.cards[0].value === '3' || newRun.cards[0].value === 'A'))
     };
 
-    set({ players: newPlayers, selectedInHand: new Set(), runCreationAmbiguity: null });
+    // Check if mustPlayCard was consumed
+    let { mustPlayCard } = get();
+    if (mustPlayCard) {
+        const stillInHand = newHand.some(c => c.id === mustPlayCard);
+        if (!stillInHand) mustPlayCard = null;
+    }
+
+    set({ players: newPlayers, selectedInHand: new Set(), runCreationAmbiguity: null, mustPlayCard });
   },
 
   resolveCreateRunAmbiguity: (direction) => {
@@ -298,6 +316,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     newOwner.runs[runIndex] = newRun;
     newPlayers[runOwnerIndex] = newOwner;
 
+    // Check if mustPlayCard was consumed
+    let { mustPlayCard } = get();
+
     if (runOwnerIndex === currentPlayerIndex) {
         const updatedHand = newOwner.hand.filter(c => !selectedInHand.has(c.id));
         if (validation.type === 'REPLACE_FLYING') {
@@ -307,6 +328,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
             ...newOwner,
             hand: sortHand(updatedHand)
         };
+        
+        if (mustPlayCard) {
+            const stillInHand = newPlayers[currentPlayerIndex].hand.some(c => c.id === mustPlayCard);
+            if (!stillInHand) mustPlayCard = null;
+        }
+
     } else {
         newPlayers[runOwnerIndex] = newOwner;
         
@@ -318,9 +345,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
             ...newCurrentPlayer,
             hand: sortHand(updatedHand)
         };
+
+        if (mustPlayCard) {
+            const stillInHand = newPlayers[currentPlayerIndex].hand.some(c => c.id === mustPlayCard);
+            if (!stillInHand) mustPlayCard = null;
+        }
     }
 
-    set({ players: newPlayers, selectedInHand: new Set(), isSelectingRun: false });
+    set({ players: newPlayers, selectedInHand: new Set(), isSelectingRun: false, mustPlayCard });
   },
 
   setSelectingRun: (isSelecting) => set({ isSelectingRun: isSelecting }),

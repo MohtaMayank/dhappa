@@ -200,3 +200,10 @@ The system SHALL display Sequence runs in Descending Rank order (High to Low), r
 - **WHEN** it is rendered on the board
 - **THEN** it appears as `5H, 4H, 3H` (Descending).
 
+### Requirement: N-Pick Instruction
+The system SHALL provide explicit instructions when an N-Pick constraint is active.
+
+#### Scenario: Displaying Constraint Message
+- **GIVEN** a player has just performed an N-Pick with bottom card "QH" (Queen of Hearts)
+- **THEN** the game status message displays "Add QH to a new or existing run".
+

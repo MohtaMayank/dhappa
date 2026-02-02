@@ -20,7 +20,7 @@ const App: React.FC = () => {
     isConfirmingDraw, setIsConfirmingDraw,
     isSelectingRun, setSelectingRun,
     runCreationAmbiguity, resolveCreateRunAmbiguity, cancelCreateRunAmbiguity,
-    isValidNPick, pickFromDiscard
+    isValidNPick, pickFromDiscard, mustPlayCard
   } = useGameStore();
 
   const [viewMode, setViewMode] = useState<'hand' | 'team_runs' | 'opponent_runs'>('hand');
@@ -43,6 +43,13 @@ const App: React.FC = () => {
 
   const currentPlayer = players[currentPlayerIndex];
   const isMyTurn = godMode || currentPlayerIndex === 0;
+
+  const getMustPlayCardName = () => {
+      if (!mustPlayCard) return '';
+      const card = currentPlayer.hand.find(c => c.id === mustPlayCard);
+      if (!card) return 'Selected Card';
+      return `${card.value}${card.suit[0]}`; 
+  };
 
   const handleRunClick = (run: Run) => {
     // Only allow interaction if we have cards selected
@@ -261,7 +268,7 @@ const App: React.FC = () => {
               
               <button 
                   onClick={() => discardCard(Array.from(selectedInHand)[0])}
-                  disabled={!isMyTurn || phase !== 'play' || selectedInHand.size !== 1}
+                  disabled={!isMyTurn || phase !== 'play' || selectedInHand.size !== 1 || !!mustPlayCard}
                   className="flex-1 py-3 bg-slate-600/20 border border-slate-500/30 rounded-xl flex flex-col items-center gap-1 disabled:opacity-20 active:scale-95 transition-all"
               >
                   <i className="fa-solid fa-arrow-up-from-bracket text-slate-400 text-sm"></i>
@@ -281,7 +288,10 @@ const App: React.FC = () => {
            <p className="text-[8px] font-bold text-yellow-400/60 uppercase tracking-widest">
                {isSelectingRun 
                     ? "Select a valid run (yours or teammate's) to add cards..." 
-                    : (isMyTurn ? (phase === 'draw' ? 'Draw a card' : 'Play cards or Discard') : `Waiting for ${players[currentPlayerIndex].name}`)
+                    : (mustPlayCard 
+                        ? `Add ${getMustPlayCardName()} to a new or existing run`
+                        : (isMyTurn ? (phase === 'draw' ? 'Draw a card' : 'Play cards or Discard') : `Waiting for ${players[currentPlayerIndex].name}`)
+                      )
                }
            </p>
         </div>

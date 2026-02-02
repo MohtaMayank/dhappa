@@ -19,7 +19,8 @@ const App: React.FC = () => {
     createRun, addToRun, lastDrawnCard, closeDrawOverlay, godMode,
     isConfirmingDraw, setIsConfirmingDraw,
     isSelectingRun, setSelectingRun,
-    runCreationAmbiguity, resolveCreateRunAmbiguity, cancelCreateRunAmbiguity
+    runCreationAmbiguity, resolveCreateRunAmbiguity, cancelCreateRunAmbiguity,
+    isValidNPick, pickFromDiscard
   } = useGameStore();
 
   const [viewMode, setViewMode] = useState<'hand' | 'team_runs' | 'opponent_runs'>('hand');
@@ -284,12 +285,13 @@ const App: React.FC = () => {
           <DiscardNPicker 
             pile={discardPile} 
             onPick={(n) => { 
-                useGameStore.getState().pickFromDiscard(n); 
+                pickFromDiscard(n); 
                 setIsNPickerOpen(false); 
                 setViewMode('team_runs');
             }} 
             onClose={() => setIsNPickerOpen(false)}
             canPick={isMyTurn && phase === 'draw'}
+            isValidPick={isValidNPick}
           />
       )}
 

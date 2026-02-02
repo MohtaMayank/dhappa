@@ -24,6 +24,7 @@ interface GameStore extends GameState {
   setNPickPreview: (n: number | null) => void;
   closeDrawOverlay: () => void;
   setIsConfirmingDraw: (isConfirming: boolean) => void;
+  isValidNPick: (n: number) => boolean;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -106,8 +107,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   closeDrawOverlay: () => set({ lastDrawnCard: null, phase: 'play' }),
 
   pickFromDiscard: (n: number) => {
-    const { discardPile, players, currentPlayerIndex, phase } = get();
+    const { discardPile, players, currentPlayerIndex, phase, isValidNPick } = get();
     if (phase !== 'draw' || n > discardPile.length) return;
+    if (!isValidNPick(n)) return;
 
     const picked = discardPile.slice(-n);
     const remainingDiscard = discardPile.slice(0, -n);
@@ -123,7 +125,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       discardPile: remainingDiscard,
       players: newPlayers,
       phase: 'play',
-      isNPickActive: false
+      isNPickActive: false,
+      selectedInHand: new Set([bottomCard.id]) // Auto-select the bottom card
     });
   },
 
@@ -332,5 +335,48 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setNPickPreview: (n) => set({ nPickPreview: n }),
   
-  setIsConfirmingDraw: (isConfirming) => set({ isConfirmingDraw: isConfirming })
+  setIsConfirmingDraw: (isConfirming) => set({ isConfirmingDraw: isConfirming }),
+
+  isValidNPick: (n: number) => {
+    const { discardPile, players, currentPlayerIndex } = get();
+    if (n <= 0 || n > discardPile.length) return false;
+
+    const picked = discardPile.slice(-n);
+    const bottomCard = picked[0];
+    const player = players[currentPlayerIndex];
+
+    // 1. Can it be added to any existing run of the team?
+    const teamPlayers = players.filter(p => p.team === player.team);
+    const canAddToAny = teamPlayers.some(p => 
+      p.runs.some(run => validateAddToRun([bottomCard], run).type !== 'INVALID')
+    );
+
+    if (canAddToAny) return true;
+
+    // 2. Can it form a NEW run with cards in hand?
+    // We try all possible combinations of 2 cards from hand + the bottom card.
+    // Optimization: only check cards of same suit (for sequence) or same rank (for set).
+    const hand = player.hand;
+    for (let i = 0; i < hand.length; i++) {
+      for (let j = i + 1; j < hand.length; j++) {
+        const potentialRun = [bottomCard, hand[i], hand[j]];
+        
+        // Check Sequence (needs same suit unless it's a wild)
+        const context = inferRunContext(potentialRun);
+        if (context) {
+            // If player hasn't opened, the new run must be pure
+            if (!player.hasOpened) {
+                const isPure = potentialRun.every(c => !c.isWild);
+                if (!isPure) continue;
+                
+                // Pure sets must be 3s or Aces
+                if (context.type === 'SET' && (bottomCard.value !== '3' && bottomCard.value !== 'A')) continue;
+            }
+            return true;
+        }
+      }
+    }
+
+    return false;
+  }
 }));

@@ -273,7 +273,7 @@ const App: React.FC = () => {
         <div className="h-6 flex items-center justify-center bg-black/40">
            <p className="text-[8px] font-bold text-yellow-400/60 uppercase tracking-widest">
                {isSelectingRun 
-                    ? "Select a valid run to add cards..." 
+                    ? "Select a valid run (yours or teammate's) to add cards..." 
                     : (isMyTurn ? (phase === 'draw' ? 'Draw a card' : 'Play cards or Discard') : `Waiting for ${players[currentPlayerIndex].name}`)
                }
            </p>

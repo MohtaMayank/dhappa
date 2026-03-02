@@ -50,22 +50,22 @@ const CardBase: React.FC<CardBaseProps> = ({
     : 'w-11 h-14 sm:w-13 sm:h-18 md:w-10 md:h-14';
 
   const cornerTextClass = variant === 'standard'
-    ? 'text-[10px] sm:text-xs md:text-sm'
-    : 'text-[10px] sm:text-xs md:text-sm';
+    ? 'text-xs sm:text-xs md:text-sm'
+    : 'text-[11px] sm:text-[11px] md:text-sm';
 
   const cornerSymbolClass = variant === 'standard'
-    ? 'text-[8px] sm:text-[10px] md:text-xs'
-    : 'text-[8px] sm:text-[10px] md:text-[10px]';
+    ? 'text-[10px] sm:text-[10px] md:text-xs'
+    : 'text-[9px] sm:text-[9px] md:text-[10px]';
     
   const centerTextClass = variant === 'standard'
-    ? 'text-[14px] sm:text-lg md:text-2xl'
+    ? 'text-base sm:text-lg md:text-2xl'
     : 'md:hidden'; // Hide center on compact
 
   const centerSymbolClass = variant === 'standard'
-    ? 'text-lg sm:text-xl md:text-3xl'
+    ? 'text-xl sm:text-xl md:text-3xl'
     : 'md:hidden'; // Hide center on compact
 
-  const paddingClass = variant === 'compact' ? 'p-0.5 md:p-[1px]' : 'p-0.5';
+  const paddingClass = variant === 'compact' ? 'p-0.5 md:p-[1px]' : 'p-1 pt-0.5';
 
   return (
     <div 

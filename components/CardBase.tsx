@@ -51,11 +51,11 @@ const CardBase: React.FC<CardBaseProps> = ({
 
   const cornerTextClass = variant === 'standard'
     ? 'text-xs sm:text-xs md:text-sm'
-    : 'text-[11px] sm:text-[11px] md:text-sm';
+    : 'text-xs sm:text-xs md:text-sm';
 
   const cornerSymbolClass = variant === 'standard'
     ? 'text-[10px] sm:text-[10px] md:text-xs'
-    : 'text-[9px] sm:text-[9px] md:text-[10px]';
+    : 'text-[10px] sm:text-[10px] md:text-[10px]';
     
   const centerTextClass = variant === 'standard'
     ? 'text-base sm:text-lg md:text-2xl'

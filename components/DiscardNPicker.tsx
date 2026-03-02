@@ -58,7 +58,8 @@ const DiscardNPicker: React.FC<DiscardNPickerProps> = ({ pile, onPick, onClose, 
                     className={`${isSelected ? 'ring-2 ring-yellow-400 shadow-[0_10px_20px_rgba(0,0,0,0.5)]' : ''} ${isHovered && !isSelected ? 'ring-2 ring-white/50' : ''}`} 
                   />
                   
-                  {(isHovered || isSelected) && (
+                  {/* Only show message over the lowest card in the selection/hover */}
+                  {((isSelected && idx === selectedIdx) || (isHovered && !isSelected && !selectedIdx)) && (
                     <div className={`absolute -top-10 left-1/2 -translate-x-1/2 ${isSelected ? 'bg-yellow-400 text-black' : 'bg-white/20 text-white'} text-[9px] font-black px-2 py-1 rounded-full whitespace-nowrap shadow-lg z-[60] border border-black/10`}>
                        {isSelected ? 'Selected' : 'Pick'} {currentNumFromTop} {currentNumFromTop === 1 ? 'Card' : 'Cards'}
                        <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 ${isSelected ? 'bg-yellow-400' : 'bg-white/20'} rotate-45 border-r border-b border-black/10`}></div>

@@ -48,10 +48,10 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
     });
   }, [elements]);
 
-  // Mobile: w-13 (52px). Visible 16px -> overlap -36px
-  // sm: w-14 (56px). Visible 18px -> overlap -38px
+  // Mobile: w-11 (44px). Visible 16px -> overlap -28px
+  // sm: w-13 (52px). Visible 18px -> overlap -34px
   // md (Compact): w-10 (40px). Visible ~18px -> overlap -22px
-  const overlapClass = "ml-[-36px] sm:ml-[-38px]";
+  const overlapClass = "ml-[-28px] sm:ml-[-34px]";
   const lgOverlapClass = "md:-ml-[22px]";
 
   const renderElements = (items: any[], isCompressed: boolean) => (
@@ -74,7 +74,7 @@ const RunDisplay: React.FC<RunDisplayProps> = ({ cards, label, isFirstInRow }) =
                 {/* Stack indicator */}
                 <div 
                   style={{ zIndex: zIndex + 1 }}
-                  className={`relative w-13 h-18 sm:w-14 sm:h-20 md:w-10 md:h-14 ${overlapClass} shrink-0`}
+                  className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-10 md:h-14 ${overlapClass} shrink-0`}
                 >
                   {/* Bottom-most layer */}
                   <div className="absolute left-[-3px] top-[3px] w-full h-full bg-white border border-black/30 rounded-md -z-20"></div>

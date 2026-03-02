@@ -16,7 +16,7 @@ const Hand: React.FC<HandProps> = ({ cards, selectedIds, onToggleCard, isDisable
       <div className="flex items-end justify-start min-w-max h-24 sm:h-28 md:h-36 px-4">
         {cards.map((card, idx) => {
           const isSelected = selectedIds.has(card.id);
-          const marginClass = idx === 0 ? '' : '-ml-8 sm:-ml-10 md:-ml-10';
+          const marginClass = idx === 0 ? '' : '-ml-6 md:-ml-10';
           
           return (
             <div 

@@ -291,7 +291,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     } else if (validation.type === 'REPLACE_FLYING') {
        const jokerId = validation.cardToReturn.id;
        newRun.cards = newRun.cards.map(c => c.id === jokerId ? cardsToAdd[0] : c);
-       newCurrentPlayer.hand = [...newCurrentPlayer.hand, validation.cardToReturn];
+       const { represents, ...cleanJoker } = validation.cardToReturn;
+       newCurrentPlayer.hand = [...newCurrentPlayer.hand, cleanJoker];
     } else if (validation.type === 'REPLACE_STATIC') {
        const displacedId = validation.displacedCard.id;
        const position = validation.newPosition === 'AMBIGUOUS' ? options?.replaceDirection : validation.newPosition;
@@ -322,7 +323,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (runOwnerIndex === currentPlayerIndex) {
         const updatedHand = newOwner.hand.filter(c => !selectedInHand.has(c.id));
         if (validation.type === 'REPLACE_FLYING') {
-            updatedHand.push(validation.cardToReturn);
+            const { represents, ...cleanJoker } = validation.cardToReturn;
+            updatedHand.push(cleanJoker);
         }
         newPlayers[currentPlayerIndex] = {
             ...newOwner,
@@ -339,7 +341,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         
         let updatedHand = newCurrentPlayer.hand.filter(c => !selectedInHand.has(c.id));
         if (validation.type === 'REPLACE_FLYING') {
-            updatedHand.push(validation.cardToReturn);
+            const { represents, ...cleanJoker } = validation.cardToReturn;
+            updatedHand.push(cleanJoker);
         }
         newPlayers[currentPlayerIndex] = {
             ...newCurrentPlayer,

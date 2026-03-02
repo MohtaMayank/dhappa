@@ -96,8 +96,8 @@ const CardBase: React.FC<CardBaseProps> = ({
 
       {/* Wild indicators */}
       {isWild && (
-        <div className={`absolute bottom-0 right-0 left-0 h-1.5 ${isStatic ? 'bg-blue-500' : 'bg-purple-500'} flex items-center justify-center`}>
-          <span className="text-[6px] text-white font-black uppercase tracking-tighter">
+        <div className={`absolute bottom-0 right-0 left-0 h-3 ${isStatic ? 'bg-blue-500' : 'bg-purple-500'} flex items-center justify-center`}>
+          <span className="text-[8px] text-white font-black uppercase tracking-tighter">
             {isStatic ? 'STATIC' : 'FLYING'}
           </span>
         </div>

@@ -67,13 +67,6 @@ const RunInspector: React.FC<RunInspectorProps> = ({ cards, onClose }) => {
                         className="!w-14 !h-20 sm:!w-16 sm:!h-24 shadow-xl"
                         isFirst={true} 
                       />
-                      {/* Wildcard Indicator */}
-                      {item.card.isWild && (
-                        <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-emerald-950 text-[10px] font-black px-1.5 py-0.5 rounded shadow-lg border border-white/20 z-10 flex items-center gap-1">
-                          <span>{REVERSE_RANK[item.representedRank]}</span>
-                          <i className={`fa-solid fa-${item.representedSuit === 'H' ? 'heart' : item.representedSuit === 'D' ? 'diamond' : item.representedSuit === 'C' ? 'clover' : 'play rotate-[-90deg]'}`}></i>
-                        </div>
-                      )}
                     </div>
                   ))
                 ) : (

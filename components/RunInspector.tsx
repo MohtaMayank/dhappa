@@ -51,11 +51,11 @@ const RunInspector: React.FC<RunInspectorProps> = ({ cards, onClose }) => {
             {/* Active Sequence */}
             <div className="flex flex-col gap-3">
               <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">
-                Active Sequence
+                Active Sequence (High to Low)
               </h4>
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 {structure ? (
-                  structure.active.map((item, idx) => (
+                  [...structure.active].reverse().map((item, idx) => (
                     <div 
                       key={idx} 
                       className="relative animate-in zoom-in-95 fade-in duration-300 fill-mode-both group"
@@ -71,7 +71,7 @@ const RunInspector: React.FC<RunInspectorProps> = ({ cards, onClose }) => {
                   ))
                 ) : (
                   // Fallback if structure analysis fails (shouldn't happen for valid runs)
-                  cards.map((card, idx) => (
+                  [...cards].reverse().map((card, idx) => (
                      <CardBase key={idx} card={card} isStacked={false} className="!w-14 !h-20 shadow-xl" />
                   ))
                 )}
@@ -86,11 +86,11 @@ const RunInspector: React.FC<RunInspectorProps> = ({ cards, onClose }) => {
                   Unused / Attached
                 </h4>
                 <div className="flex flex-wrap gap-2 sm:gap-3 opacity-80">
-                  {structure.excess.map((card, idx) => (
+                  {[...structure.excess].reverse().map((card, idx) => (
                     <div 
                       key={`excess-${idx}`} 
                       className="relative animate-in zoom-in-95 fade-in duration-300 fill-mode-both grayscale-[0.3]"
-                      style={{ animationDelay: `${(structure.active.length + idx) * 40}ms` }}
+                      style={{ animationDelay: `${((structure?.active.length || 0) + idx) * 40}ms` }}
                     >
                        <CardBase 
                         card={card} 

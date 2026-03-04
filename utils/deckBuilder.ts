@@ -1,5 +1,5 @@
-import { Suit, WildType, CardDef } from '../types';
-import { generateId } from '../constants';
+import { Suit, WildType, CardDef } from '../shared/types';
+import { generateId } from '../shared/constants';
 
 export const getDeck = (): CardDef[] => {
   const suits = [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades];

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CardDef } from '../types';
+import { CardDef } from '../shared/types';
 import CardBase from './CardBase';
 
 interface DrawCardOverlayProps {

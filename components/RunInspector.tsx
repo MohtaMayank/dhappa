@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { CardDef } from '../types';
+import { CardDef } from '../shared/types';
 import CardBase from './CardBase';
-import { analyzeRunStructure, REVERSE_RANK } from '../gameLogic';
+import { analyzeRunStructure, REVERSE_RANK } from '../shared/gameLogic';
 
 interface RunInspectorProps {
   cards: CardDef[] | null;

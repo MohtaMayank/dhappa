@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { CardDef, Suit, WildType } from '../types';
-import { SUIT_COLORS, SUIT_SYMBOLS } from '../constants';
+import { CardDef, Suit, WildType } from '../shared/types';
+import { SUIT_COLORS, SUIT_SYMBOLS } from '../shared/constants';
 
 interface CardBaseProps {
   card: CardDef;

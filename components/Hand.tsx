@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { CardDef } from '../types';
+import { CardDef } from '../shared/types';
 import CardBase from './CardBase';
 
 interface HandProps {
   cards: CardDef[];
-  selectedIds: Set<string>;
+  selectedIds: string[];
   onToggleCard: (id: string) => void;
   isDisabled?: boolean;
 }
@@ -15,7 +15,7 @@ const Hand: React.FC<HandProps> = ({ cards, selectedIds, onToggleCard, isDisable
     <div className="w-full overflow-x-auto overflow-y-visible pt-0 pb-8 px-8 scrollbar-hide">
       <div className="flex items-end justify-start min-w-max h-24 sm:h-28 md:h-36 px-4">
         {cards.map((card, idx) => {
-          const isSelected = selectedIds.has(card.id);
+          const isSelected = selectedIds.includes(card.id);
           const marginClass = idx === 0 ? '' : '-ml-6 md:-ml-10';
           
           return (

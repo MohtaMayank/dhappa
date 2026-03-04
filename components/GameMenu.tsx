@@ -5,7 +5,7 @@ import { SCENARIO_KEYS } from '../scenarios';
 const GameMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
-  const { loadScenario, godMode, toggleGodMode } = useGameStore();
+  const { godMode, toggleGodMode, loadScenario } = useGameStore();
 
   if (!isOpen) {
     return (

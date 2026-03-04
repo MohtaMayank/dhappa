@@ -1,6 +1,6 @@
-import { GameState, Player, Team, CardDef, Run, Suit, GamePhase } from './types';
+import { GameState, Player, Team, CardDef, Run, Suit, GamePhase } from './shared/types';
 import { getDeck, seededShuffle, pluckCard } from './utils/deckBuilder';
-import { sortHand, generateId } from './constants';
+import { sortHand, generateId } from './shared/constants';
 
 export const SCENARIO_KEYS = {
   INITIAL: 'initial',
@@ -50,13 +50,13 @@ const getInitialScenario = (): GameState => {
     drawPile: deck,
     discardPile,
     phase: 'draw',
-    selectedInHand: new Set(),
+    selectedInHand: [],
     nPickPreview: null,
     lastDrawnCard: null,
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null
+    runCreationAmbiguity: null, mustPlayCard: null
   };
 };
 
@@ -156,13 +156,13 @@ const getMidGameScenario = (): GameState => {
     drawPile: deck,
     discardPile,
     phase: 'draw',
-    selectedInHand: new Set(),
+    selectedInHand: [],
     nPickPreview: null,
     lastDrawnCard: null,
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null
+    runCreationAmbiguity: null, mustPlayCard: null
   };
 };
 
@@ -266,13 +266,13 @@ const getEndGameScenario = (): GameState => {
     drawPile: deck,
     discardPile,
     phase: 'play',
-    selectedInHand: new Set(),
+    selectedInHand: [],
     nPickPreview: null,
     lastDrawnCard: null,
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null
+    runCreationAmbiguity: null, mustPlayCard: null
   };
 };
 
@@ -320,13 +320,13 @@ const getManyRunsScenario = (): GameState => {
     drawPile: [],
     discardPile: [],
     phase: 'play',
-    selectedInHand: new Set(),
+    selectedInHand: [],
     nPickPreview: null,
     lastDrawnCard: null,
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null
+    runCreationAmbiguity: null, mustPlayCard: null
   };
 };
 

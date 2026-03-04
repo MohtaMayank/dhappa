@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Player, Team } from '../types';
+import { Player, Team } from '../shared/types';
 
 interface PlayerAvatarProps {
   player: Player;

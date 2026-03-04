@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CardDef } from '../types';
+import { CardDef } from '../shared/types';
 import CardBase from './CardBase';
 
 interface TableCenterProps {

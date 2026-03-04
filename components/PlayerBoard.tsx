@@ -1,7 +1,7 @@
 import React from 'react';
-import { Player, Run as RunType, Suit, CardDef } from '../types';
-import { SUIT_COLORS, SUIT_SYMBOLS } from '../constants';
-import { getRank } from '../gameLogic';
+import { Player, Run as RunType, Suit, CardDef } from '../shared/types';
+import { SUIT_COLORS, SUIT_SYMBOLS } from '../shared/constants';
+import { getRank } from '../shared/gameLogic';
 import Run from './Run';
 
 interface PlayerBoardProps {

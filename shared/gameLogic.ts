@@ -1,4 +1,4 @@
-import { CardDef, Run, Suit, WildType } from './types';
+import { CardDef, Run, Suit, WildType, Player } from './types';
 
 // Rank values for sequence logic
 export const RANK_ORDER: Record<string, number> = {
@@ -377,4 +377,98 @@ export function applyRepresentations(cards: CardDef[]): CardDef[] {
     const { represents, ...rest } = item.card;
     return rest;
   });
+}
+
+export function isValidNPick(n: number, discardPile: CardDef[], players: Player[], currentPlayerIndex: number, isFirstTurn: boolean): boolean {
+  if (n <= 0 || n > discardPile.length) return false;
+
+  const picked = discardPile.slice(-n);
+  const bottomCard = picked[0];
+
+  // Exception 1: Wildcards are always "free" to pick
+  if (bottomCard.isWild) return true;
+
+  // Exception 2: The very first turn of the game is a "free" pick
+  if (isFirstTurn) return true;
+
+  const player = players[currentPlayerIndex];
+  if (!player) return false;
+
+  const combinedHand = [...player.hand, ...picked];
+
+  if (player.hasOpened) {
+    // 1. Can it be added to any existing run of the team?
+    const teamPlayers = players.filter(p => p.team === player.team);
+    const canAddToAny = teamPlayers.some(p =>
+      p.runs.some(run => validateAddToRun([bottomCard], run).type !== 'INVALID')
+    );
+    if (canAddToAny) return true;
+
+    // 2. Can it form a NEW run with 2 other cards from the combined hand?
+    for (let i = 0; i < combinedHand.length; i++) {
+      for (let j = i + 1; j < combinedHand.length; j++) {
+        const c1 = combinedHand[i];
+        const c2 = combinedHand[j];
+        if (c1.id === bottomCard.id || c2.id === bottomCard.id) continue;
+        
+        const potentialRun = [bottomCard, c1, c2];
+        if (inferRunContext(arrangeRun(potentialRun))) return true;
+      }
+    }
+  } else {
+    // Player hasn't opened yet.
+    // They MUST be able to form a PURE RUN (from hand + picked cards).
+    // AND they MUST be able to play the bottomCard (either in that pure run or another subsequent run).
+
+    // First, find ALL possible pure runs in the combined hand
+    const pureRuns: CardDef[][] = [];
+    const naturals = combinedHand.filter(c => !c.isWild);
+    for (let i = 0; i < naturals.length; i++) {
+      for (let j = i + 1; j < naturals.length; j++) {
+        for (let k = j + 1; k < naturals.length; k++) {
+          const subset = [naturals[i], naturals[j], naturals[k]];
+          const context = inferRunContext(arrangeRun(subset));
+          if (context) {
+            // Pure sets must be 3s or Aces to be a valid "Opening" run
+            if (context.type === 'SET' && (naturals[i].value !== '3' && naturals[i].value !== 'A')) continue;
+            pureRuns.push(subset);
+          }
+        }
+      }
+    }
+
+    if (pureRuns.length === 0) return false;
+
+    // For each possible pure run, check if the bottomCard is playable
+    for (const pr of pureRuns) {
+      // Case A: bottomCard IS part of this pure run
+      if (pr.some(c => c.id === bottomCard.id)) return true;
+
+      // Case B: bottomCard is NOT part of this pure run. 
+      // We must check if it can be played in a SECOND run with the remaining cards.
+      // (Wildcards ARE allowed here because the player would have "opened" with the first pure run).
+      const remainingHand = combinedHand.filter(c => !pr.some(pc => pc.id === c.id));
+      
+      // 1. Can form a second run with bottomCard?
+      for (let i = 0; i < remainingHand.length; i++) {
+        for (let j = i + 1; j < remainingHand.length; j++) {
+          const c1 = remainingHand[i];
+          const c2 = remainingHand[j];
+          if (c1.id === bottomCard.id || c2.id === bottomCard.id) continue;
+          
+          const potentialRun = [bottomCard, c1, c2];
+          if (inferRunContext(arrangeRun(potentialRun))) return true;
+        }
+      }
+
+      // 2. Can add to teammate's existing run? (Now that player has opened)
+      const teamPlayers = players.filter(p => p.team === player.team);
+      const canAddToTeammate = teamPlayers.some(p =>
+        p.runs.some(run => validateAddToRun([bottomCard], run).type !== 'INVALID')
+      );
+      if (canAddToTeammate) return true;
+    }
+  }
+
+  return false;
 }

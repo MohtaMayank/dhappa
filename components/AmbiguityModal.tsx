@@ -1,6 +1,6 @@
 import React from 'react';
-import { CardDef } from '../types';
-import { REVERSE_RANK } from '../gameLogic';
+import { CardDef } from '../shared/types';
+import { REVERSE_RANK } from '../shared/gameLogic';
 import CardBase from './CardBase';
 import Run from './Run';
 

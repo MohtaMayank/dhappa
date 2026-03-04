@@ -53,11 +53,12 @@ export interface GameState {
   drawPile: CardDef[];
   discardPile: CardDef[];
   phase: GamePhase;
-  selectedInHand: Set<string>;
+  selectedInHand: string[];
   nPickPreview: number | null;
   lastDrawnCard: CardDef | null;
   isNPickActive: boolean;
   isConfirmingDraw: boolean;
   isSelectingRun: boolean;
+  mustPlayCard: string | null;
   runCreationAmbiguity: { isOpen: boolean; cards: CardDef[]; headRank?: number; tailRank?: number } | null;
 }

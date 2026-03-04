@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Suit, WildType, CardDef } from './types';
 
 export const SUIT_COLORS: Record<Suit, string> = {
@@ -9,7 +8,7 @@ export const SUIT_COLORS: Record<Suit, string> = {
   [Suit.Clubs]: 'text-black',
 };
 
-export const SUIT_SYMBOLS: Record<Suit, React.ReactNode> = {
+export const SUIT_SYMBOLS: Record<Suit, string> = {
   [Suit.Hearts]: '♥',
   [Suit.Diamonds]: '♦',
   [Suit.Spades]: '♠',

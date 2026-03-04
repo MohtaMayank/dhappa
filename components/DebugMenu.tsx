@@ -4,7 +4,7 @@ import { SCENARIO_KEYS } from '../scenarios';
 
 const DebugMenu: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const { loadScenario, godMode, toggleGodMode } = useGameStore();
+  const { godMode, toggleGodMode, loadScenario } = useGameStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

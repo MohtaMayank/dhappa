@@ -1,414 +1,232 @@
+/// <reference types="vite/client" />
 import { create } from 'zustand';
-import { GameState, Player, CardDef, Run, Team, GamePhase, Suit, WildType } from './types';
-import { createDeck, generateId, sortHand } from './constants';
+import { GameState, Player, CardDef, Run, Team, GamePhase, Suit, WildType } from './shared/types';
+import { createDeck, generateId, sortHand } from './shared/constants';
 import { ScenarioKey, getScenario } from './scenarios';
-import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER, applyRepresentations, inferRunContext } from './gameLogic';
+import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER, applyRepresentations, inferRunContext } from './shared/gameLogic';
+import { io, Socket } from 'socket.io-client';
+
+const socket: Socket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:8081');
 
 interface GameStore extends GameState {
+  // Client-only state
   godMode: boolean;
   isSelectingRun: boolean;
+  addToRunAmbiguity: { 
+    isOpen: boolean; 
+    runId: string; 
+    cards: CardDef[]; 
+    headRank?: number; 
+    tailRank?: number 
+  } | null;
+  mustPlayCard: string | null;
   runCreationAmbiguity: { isOpen: boolean; cards: CardDef[]; headRank?: number; tailRank?: number } | null;
-  initGame: (playerCount: number) => void;
-  loadScenario: (key: ScenarioKey) => void;
-  toggleGodMode: () => void;
-  selectCard: (id: string) => void;
+  selectedInHand: string[];
+  lastDrawnCard: CardDef | null;
+  isConfirmingDraw: boolean;
+  isNPickActive: boolean;
+  nPickPreview: number | null;
+  
+  // Actions
+  initGame: (playerName: string, roomId: string) => void;
   drawFromDeck: () => void;
   pickFromDiscard: (n: number) => void;
-  discardCard: (id: string) => void;
-  createRun: (options?: { preferHead?: boolean; cards?: CardDef[] }) => void;
-  resolveCreateRunAmbiguity: (direction: 'HEAD' | 'TAIL') => void;
-  cancelCreateRunAmbiguity: () => void;
-  addToRun: (runId: string, options?: { replaceDirection?: 'HEAD' | 'TAIL' }) => void;
-  setSelectingRun: (isSelecting: boolean) => void;
-  nextTurn: () => void;
-  setNPickPreview: (n: number | null) => void;
+  confirmDraw: () => void;
+  cancelDraw: () => void;
   closeDrawOverlay: () => void;
-  setIsConfirmingDraw: (isConfirming: boolean) => void;
-  isValidNPick: (n: number) => boolean;
-  mustPlayCard: string | null;
+  selectCardInHand: (cardId: string) => void;
+  discardCard: (cardId: string) => void;
+  startRunCreation: () => void;
+  resolveCreateRunAmbiguity: (headRank?: number, tailRank?: number) => void;
+  cancelRunCreation: () => void;
+  addToRun: (runId: string) => void;
+  resolveAddToRunAmbiguity: (preferHead: boolean) => void;
+  cancelAddToRunAmbiguity: () => void;
+  setSelectingRun: (isSelecting: boolean) => void;
+  toggleNPick: (n: number | null) => void;
+  toggleGodMode: () => void;
+  loadScenario: (key: string) => void;
 }
 
-export const useGameStore = create<GameStore>((set, get) => ({
-  players: [],
-  currentPlayerIndex: 0,
-  drawPile: [],
-  discardPile: [],
-  phase: 'draw',
-  selectedInHand: new Set(),
-  nPickPreview: null,
-  lastDrawnCard: null,
-  isNPickActive: false,
-  godMode: false,
-  isConfirmingDraw: false,
-  isSelectingRun: false,
-  runCreationAmbiguity: null,
-  mustPlayCard: null,
-
-  initGame: (playerCount: number) => {
-    const deck = createDeck();
-    const cardsPerPlayer = playerCount === 4 ? 27 : 21;
-    
-    const players: Player[] = Array.from({ length: playerCount }).map((_, i) => ({
-      id: `p-${i}`,
-      name: i === 0 ? 'You' : `Player ${i + 1}`,
-      team: i % 2 === 0 ? Team.A : Team.B,
-      hand: sortHand(deck.splice(0, cardsPerPlayer)),
-      runs: [],
-      hasOpened: false,
-      isAI: i !== 0
-    }));
-
-    set({
-      players,
-      currentPlayerIndex: 0,
-      drawPile: deck,
-      discardPile: [deck.pop()!],
-      phase: 'draw',
-      selectedInHand: new Set(),
-      lastDrawnCard: null,
-      runCreationAmbiguity: null,
-      mustPlayCard: null
-    });
-  },
-
-  loadScenario: (key: ScenarioKey) => {
-    const scenarioState = getScenario(key);
-    set({ ...scenarioState, godMode: get().godMode, mustPlayCard: null });
-  },
-
-  toggleGodMode: () => set(state => ({ godMode: !state.godMode })),
-
-  selectCard: (id: string) => {
-    const { selectedInHand, mustPlayCard } = get();
-    
-    // Prevent deselecting the mustPlayCard
-    if (mustPlayCard === id && selectedInHand.has(id)) {
-        return;
+export const useGameStore = create<GameStore>((set, get) => {
+  // Socket listeners
+  socket.on('state_update', (newState: GameState) => {
+    const currentState = get();
+    // Auto-select mustPlayCard if it just appeared
+    if (newState.mustPlayCard && !currentState.mustPlayCard) {
+      set({ ...newState, selectedInHand: [newState.mustPlayCard] });
+    } else {
+      set({ ...newState });
     }
+  });
 
-    const newSelected = new Set(selectedInHand);
-    if (newSelected.has(id)) newSelected.delete(id);
-    else newSelected.add(id);
-    set({ selectedInHand: newSelected });
-  },
+  socket.on('error', (message: string) => {
+    console.error('Server error:', message);
+    alert(message);
+  });
 
-  drawFromDeck: () => {
-    const { drawPile, players, currentPlayerIndex, phase } = get();
-    if (phase !== 'draw') return;
+  return {
+    // Authoritative State (initialized to null/empty)
+    players: [],
+    currentPlayerIndex: 0,
+    drawPile: [],
+    discardPile: [],
+    phase: 'draw',
+    mustPlayCard: null,
 
-    const newDrawPile = [...drawPile];
-    const drawnCard = newDrawPile.pop();
-    if (!drawnCard) return;
+    // Client State
+    godMode: false,
+    isSelectingRun: false,
+    addToRunAmbiguity: null,
+    mustPlayCard: null,
+    runCreationAmbiguity: null,
+    selectedInHand: [],
+    lastDrawnCard: null,
+    isConfirmingDraw: false,
+    isNPickActive: false,
+    nPickPreview: null,
 
-    const newPlayers = [...players];
-    newPlayers[currentPlayerIndex] = {
-      ...newPlayers[currentPlayerIndex],
-      hand: sortHand([...newPlayers[currentPlayerIndex].hand, drawnCard])
-    };
+    initGame: (playerName, roomId) => {
+      (window as any).ROOM_ID = roomId; // Hack for now to store room id
+      socket.emit('join_room', roomId, playerName);
+    },
 
-    set({
-      drawPile: newDrawPile,
-      players: newPlayers,
-      lastDrawnCard: drawnCard
-    });
-  },
+    drawFromDeck: () => {
+      if (get().phase !== 'draw') return;
+      set({ isConfirmingDraw: true });
+    },
 
-  closeDrawOverlay: () => set({ lastDrawnCard: null, phase: 'play' }),
+    pickFromDiscard: (n: number) => {
+      if (get().phase !== 'draw') return;
+      socket.emit('game_action', (window as any).ROOM_ID, { type: 'PICK_FROM_DISCARD', payload: { n } });
+    },
 
-  pickFromDiscard: (n: number) => {
-    const { discardPile, players, currentPlayerIndex, phase, isValidNPick } = get();
-    if (phase !== 'draw' || n > discardPile.length) return;
-    if (!isValidNPick(n)) return;
+    confirmDraw: () => {
+      set({ isConfirmingDraw: false });
+      socket.emit('game_action', (window as any).ROOM_ID, { type: 'DRAW_FROM_DECK' });
+    },
 
-    const picked = discardPile.slice(-n);
-    const remainingDiscard = discardPile.slice(0, -n);
-    const bottomCard = picked[0];
+    cancelDraw: () => {
+      set({ isConfirmingDraw: false });
+    },
 
-    const newPlayers = [...players];
-    newPlayers[currentPlayerIndex] = {
-      ...newPlayers[currentPlayerIndex],
-      hand: sortHand([...newPlayers[currentPlayerIndex].hand, ...picked])
-    };
+    closeDrawOverlay: () => {
+      set({ lastDrawnCard: null });
+    },
 
-    set({
-      discardPile: remainingDiscard,
-      players: newPlayers,
-      phase: 'play',
-      isNPickActive: false,
-      selectedInHand: new Set([bottomCard.id]), // Auto-select the bottom card
-      mustPlayCard: bottomCard.id
-    });
-  },
+    selectCardInHand: (cardId) => {
+      const { selectedInHand, mustPlayCard } = get();
+      if (mustPlayCard === cardId && selectedInHand.includes(cardId)) {
+        return; // Prevent deselecting
+      }
 
-  discardCard: (id: string) => {
-    const { players, currentPlayerIndex, discardPile, phase, mustPlayCard } = get();
-    if (phase !== 'play') return;
-    if (mustPlayCard) return; // Prevent discard if constraint active
+      if (selectedInHand.includes(cardId)) {
+        set({ selectedInHand: selectedInHand.filter(id => id !== cardId) });
+      } else {
+        set({ selectedInHand: [...selectedInHand, cardId] });
+      }
+    },
 
-    const player = players[currentPlayerIndex];
-    const cardToDiscard = player.hand.find(c => c.id === id);
-    if (!cardToDiscard) return;
+    discardCard: (cardId) => {
+      socket.emit('game_action', (window as any).ROOM_ID, { 
+        type: 'DISCARD_CARD', 
+        payload: { cardId } 
+      });
+      set({ selectedInHand: [] });
+    },
 
-    const isDhappa = cardToDiscard.value === '2';
-    const newDiscardPile = isDhappa ? [] : [...discardPile, cardToDiscard];
-    const newHand = player.hand.filter(c => c.id !== id);
+    startRunCreation: () => {
+      const { selectedInHand, players, currentPlayerIndex } = get();
+      const player = players[currentPlayerIndex];
+      if (!player) return;
+      const selectedCards = player.hand.filter(c => selectedInHand.includes(c.id));
+      
+      const ambiguity = checkRunAmbiguity(selectedCards);
+      if (ambiguity === 'AMBIGUOUS_ENDS') {
+        set({ runCreationAmbiguity: { isOpen: true, cards: selectedCards } });
+      } else {
+        socket.emit('game_action', (window as any).ROOM_ID, {
+          type: 'CREATE_RUN',
+          payload: { cards: selectedCards, options: {} }
+        });
+        set({ selectedInHand: [] });
+      }
+    },
 
-    const newPlayers = [...players];
-    newPlayers[currentPlayerIndex] = { ...player, hand: sortHand(newHand) };
-
-    set({
-      players: newPlayers,
-      discardPile: newDiscardPile,
-      selectedInHand: new Set(),
-      phase: 'draw',
-      currentPlayerIndex: (currentPlayerIndex + 1) % players.length
-    });
-  },
-
-  createRun: (options) => {
-    const { selectedInHand, players, currentPlayerIndex } = get();
-    const player = players[currentPlayerIndex];
-    const cardsInRun = options?.cards || player.hand.filter(c => selectedInHand.has(c.id));
-    
-    if (cardsInRun.length < 3) return;
-
-    if (options?.preferHead === undefined) {
-        const ambiguity = checkRunAmbiguity(cardsInRun);
-        if (ambiguity === 'AMBIGUOUS_ENDS') {
-            // Need to calculate ranks for sequence ambiguity during creation too
-            const naturals = cardsInRun.filter(c => !c.isWild);
-            const sorted = [...naturals].sort((a, b) => (RANK_ORDER[a.value]||0) - (RANK_ORDER[b.value]||0));
-            const remaining = cardsInRun.filter(c => c.isWild).length - ( (RANK_ORDER[sorted[sorted.length-1].value] - RANK_ORDER[sorted[0].value]) - (sorted.length-1) );
-            
-            const headRank = RANK_ORDER[sorted[0].value] - remaining;
-            const tailRank = RANK_ORDER[sorted[sorted.length-1].value] + remaining;
-
-            set({ runCreationAmbiguity: { isOpen: true, cards: cardsInRun, headRank, tailRank } });
-            return;
-        }
-    }
-
-    const arrangedCards = arrangeRun(cardsInRun, options?.preferHead);
-    const context = inferRunContext(arrangedCards);
-
-    if (!context) {
-        console.warn('Invalid Run: Selected cards do not form a valid SET or SEQUENCE.');
-        return;
-    }
-
-    const finalCards = applyRepresentations(arrangedCards);
-
-    const isPure = finalCards.every(c => !c.isWild);
-    const isSet = context.type === 'SET' || 
-                  (finalCards.every(c => c.value === 'A' || c.value === '3') && isPure);
-
-    const newRun: Run = {
-      id: generateId(),
-      cards: finalCards,
-      isPure,
-      isSet
-    };
-
-    const newHand = player.hand.filter(c => !cardsInRun.find(cr => cr.id === c.id));
-    const newPlayers = [...players];
-    newPlayers[currentPlayerIndex] = {
-      ...player,
-      hand: sortHand(newHand),
-      runs: [...player.runs, newRun],
-      hasOpened: player.hasOpened || isPure || (isSet && (newRun.cards[0].value === '3' || newRun.cards[0].value === 'A'))
-    };
-
-    // Check if mustPlayCard was consumed
-    let { mustPlayCard } = get();
-    if (mustPlayCard) {
-        const stillInHand = newHand.some(c => c.id === mustPlayCard);
-        if (!stillInHand) mustPlayCard = null;
-    }
-
-    set({ players: newPlayers, selectedInHand: new Set(), runCreationAmbiguity: null, mustPlayCard });
-  },
-
-  resolveCreateRunAmbiguity: (direction) => {
+    resolveCreateRunAmbiguity: (headRank, tailRank) => {
       const { runCreationAmbiguity } = get();
       if (!runCreationAmbiguity) return;
-      get().createRun({ preferHead: direction === 'HEAD', cards: runCreationAmbiguity.cards });
-  },
-
-  cancelCreateRunAmbiguity: () => {
-      set({ runCreationAmbiguity: null });
-  },
-
-  addToRun: (runId: string, options) => {
-    const { selectedInHand, players, currentPlayerIndex } = get();
-    if (selectedInHand.size === 0) return;
-
-    const player = players[currentPlayerIndex];
-    const cardsToAdd = player.hand.filter(c => selectedInHand.has(c.id));
-    
-    let targetRun: Run | undefined;
-    let runOwnerIndex = -1;
-    let runIndex = -1;
-
-    players.some((p, pIdx) => {
-      const rIdx = p.runs.findIndex(r => r.id === runId);
-      if (rIdx !== -1) {
-        targetRun = p.runs[rIdx];
-        runOwnerIndex = pIdx;
-        runIndex = rIdx;
-        return true;
-      }
-      return false;
-    });
-
-    if (!targetRun || runOwnerIndex === -1) return;
-
-    const validation = validateAddToRun(cardsToAdd, targetRun);
-
-    if (validation.type === 'INVALID') {
-        console.warn('Invalid Add to Run:', validation.reason);
-        return;
-    }
-
-    const newPlayers = [...players];
-    const newOwner = { ...newPlayers[runOwnerIndex] };
-    const newCurrentPlayer = { ...newPlayers[currentPlayerIndex] }; 
-    const newRun = { ...targetRun };
-
-    // Apply changes based on validation type
-    if (validation.type === 'EXTEND') {
-        const position = validation.position === 'AMBIGUOUS' ? options?.replaceDirection : validation.position;
-
-        if (!position) {
-            console.warn('Ambiguous Extension requires direction');
-            return;
+      
+      socket.emit('game_action', (window as any).ROOM_ID, {
+        type: 'CREATE_RUN',
+        payload: { 
+          cards: runCreationAmbiguity.cards, 
+          options: { headRank, tailRank } 
         }
+      });
+      
+      set({ runCreationAmbiguity: null, selectedInHand: [] });
+    },
 
-        if (position === 'HEAD') {
-            newRun.cards = [...validation.cards, ...newRun.cards];
-        } else {
-            newRun.cards = [...newRun.cards, ...validation.cards];
+    cancelRunCreation: () => set({ runCreationAmbiguity: null }),
+
+    addToRun: (runId) => {
+      const { selectedInHand, players, currentPlayerIndex } = get();
+      const player = players[currentPlayerIndex];
+      if (!player) return;
+      const selectedCards = player.hand.filter(c => selectedInHand.includes(c.id));
+
+      // Check for ambiguity
+      const runOwner = players.find(p => p.runs.some(r => r.id === runId));
+      const targetRun = runOwner?.runs.find(r => r.id === runId);
+      if (targetRun) {
+        const validation = validateAddToRun(selectedCards, targetRun);
+        if (validation.type === 'EXTEND' && validation.position === 'AMBIGUOUS') {
+          set({ addToRunAmbiguity: { isOpen: true, runId, cards: selectedCards, headRank: validation.headRank, tailRank: validation.tailRank } });
+          return;
         }
-    } else if (validation.type === 'REPLACE_FLYING') {
-       const jokerId = validation.cardToReturn.id;
-       newRun.cards = newRun.cards.map(c => c.id === jokerId ? cardsToAdd[0] : c);
-       newCurrentPlayer.hand = [...newCurrentPlayer.hand, validation.cardToReturn];
-    } else if (validation.type === 'REPLACE_STATIC') {
-       const displacedId = validation.displacedCard.id;
-       const position = validation.newPosition === 'AMBIGUOUS' ? options?.replaceDirection : validation.newPosition;
-       
-       if (!position) {
-           console.warn('Ambiguous Static Wild move requires direction');
-           return;
-       }
-
-       const newCards = newRun.cards.map(c => c.id === displacedId ? cardsToAdd[0] : c);
-       
-       if (position === 'HEAD') {
-           newRun.cards = [validation.displacedCard, ...newCards];
-       } else {
-           newRun.cards = [...newCards, validation.displacedCard];
-       }
-    }
-
-    newRun.cards = applyRepresentations(newRun.cards);
-
-    newOwner.runs = [...newOwner.runs];
-    newOwner.runs[runIndex] = newRun;
-    newPlayers[runOwnerIndex] = newOwner;
-
-    // Check if mustPlayCard was consumed
-    let { mustPlayCard } = get();
-
-    if (runOwnerIndex === currentPlayerIndex) {
-        const updatedHand = newOwner.hand.filter(c => !selectedInHand.has(c.id));
-        if (validation.type === 'REPLACE_FLYING') {
-            updatedHand.push(validation.cardToReturn);
-        }
-        newPlayers[currentPlayerIndex] = {
-            ...newOwner,
-            hand: sortHand(updatedHand)
-        };
-        
-        if (mustPlayCard) {
-            const stillInHand = newPlayers[currentPlayerIndex].hand.some(c => c.id === mustPlayCard);
-            if (!stillInHand) mustPlayCard = null;
-        }
-
-    } else {
-        newPlayers[runOwnerIndex] = newOwner;
-        
-        let updatedHand = newCurrentPlayer.hand.filter(c => !selectedInHand.has(c.id));
-        if (validation.type === 'REPLACE_FLYING') {
-            updatedHand.push(validation.cardToReturn);
-        }
-        newPlayers[currentPlayerIndex] = {
-            ...newCurrentPlayer,
-            hand: sortHand(updatedHand)
-        };
-
-        if (mustPlayCard) {
-            const stillInHand = newPlayers[currentPlayerIndex].hand.some(c => c.id === mustPlayCard);
-            if (!stillInHand) mustPlayCard = null;
-        }
-    }
-
-    set({ players: newPlayers, selectedInHand: new Set(), isSelectingRun: false, mustPlayCard });
-  },
-
-  setSelectingRun: (isSelecting) => set({ isSelectingRun: isSelecting }),
-
-  nextTurn: () => {
-    set(state => ({
-      currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
-      phase: 'draw',
-      isSelectingRun: false
-    }));
-  },
-
-  setNPickPreview: (n) => set({ nPickPreview: n }),
-  
-  setIsConfirmingDraw: (isConfirming) => set({ isConfirmingDraw: isConfirming }),
-
-  isValidNPick: (n: number) => {
-    const { discardPile, players, currentPlayerIndex } = get();
-    if (n <= 0 || n > discardPile.length) return false;
-
-    const picked = discardPile.slice(-n);
-    const bottomCard = picked[0];
-    const player = players[currentPlayerIndex];
-
-    // 1. Can it be added to any existing run of the team?
-    const teamPlayers = players.filter(p => p.team === player.team);
-    const canAddToAny = teamPlayers.some(p => 
-      p.runs.some(run => validateAddToRun([bottomCard], run).type !== 'INVALID')
-    );
-
-    if (canAddToAny) return true;
-
-    // 2. Can it form a NEW run with cards in hand?
-    // We try all possible combinations of 2 cards from hand + the bottom card.
-    // Optimization: only check cards of same suit (for sequence) or same rank (for set).
-    const hand = player.hand;
-    for (let i = 0; i < hand.length; i++) {
-      for (let j = i + 1; j < hand.length; j++) {
-        const potentialRun = [bottomCard, hand[i], hand[j]];
-        
-        // Check Sequence (needs same suit unless it's a wild)
-        const context = inferRunContext(potentialRun);
-        if (context) {
-            // If player hasn't opened, the new run must be pure
-            if (!player.hasOpened) {
-                const isPure = potentialRun.every(c => !c.isWild);
-                if (!isPure) continue;
-                
-                // Pure sets must be 3s or Aces
-                if (context.type === 'SET' && (bottomCard.value !== '3' && bottomCard.value !== 'A')) continue;
-            }
-            return true;
+        if (validation.type === 'REPLACE_STATIC' && validation.newPosition === 'AMBIGUOUS') {
+          set({ addToRunAmbiguity: { isOpen: true, runId, cards: selectedCards, headRank: validation.headRank, tailRank: validation.tailRank } });
+          return;
         }
       }
-    }
 
-    return false;
-  }
-}));
+      socket.emit('game_action', (window as any).ROOM_ID, {
+        type: 'ADD_TO_RUN',
+        payload: { runId, cards: selectedCards, options: {} }
+      });
+      
+      set({ selectedInHand: [], isSelectingRun: false });
+    },
+
+    resolveAddToRunAmbiguity: (preferHead) => {
+      const { addToRunAmbiguity } = get();
+      if (!addToRunAmbiguity) return;
+      
+      socket.emit('game_action', (window as any).ROOM_ID, {
+        type: 'ADD_TO_RUN',
+        payload: { 
+          runId: addToRunAmbiguity.runId, 
+          cards: addToRunAmbiguity.cards, 
+          options: { preferHead } 
+        }
+      });
+      
+      set({ addToRunAmbiguity: null, selectedInHand: [], isSelectingRun: false });
+    },
+
+    cancelAddToRunAmbiguity: () => set({ addToRunAmbiguity: null }),
+
+    setSelectingRun: (isSelecting) => set({ isSelectingRun: isSelecting }),
+
+    toggleNPick: (n) => {
+      set({ isNPickActive: !!n, nPickPreview: n });
+    },
+
+    toggleGodMode: () => set((state) => ({ godMode: !state.godMode })),
+
+    loadScenario: (key) => {
+      socket.emit('game_action', (window as any).ROOM_ID, { type: 'LOAD_SCENARIO', payload: { key } });
+    },
+  };
+});

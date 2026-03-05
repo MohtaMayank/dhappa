@@ -26,12 +26,17 @@ const CardBase: React.FC<CardBaseProps> = ({
   showRepresented = true,
   variant = 'standard'
 }) => {
-  const displaySuit = card.represents?.suit || card.suit;
-  const displayValue = card.represents?.value || card.value;
+  const isWild = card.isWild;
+  
+  // Only show represented values if explicitly requested AND it's a wildcard that HAS a representation
+  const useRepresented = showRepresented && isWild && card.represents;
+  
+  const displaySuit = useRepresented ? card.represents!.suit : card.suit;
+  const displayValue = useRepresented ? card.represents!.value : card.value;
+  
   const colorClass = SUIT_COLORS[displaySuit];
   const symbol = SUIT_SYMBOLS[displaySuit];
   
-  const isWild = card.isWild;
   const isStatic = card.wildType === WildType.Static;
 
   const bgClass = isWild 

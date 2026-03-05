@@ -375,8 +375,14 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       if (validation.type === 'INVALID') throw new Error('Invalid move to run');
 
       const preferHead = payload.options?.preferHead || false;
+      console.log(`[DEBUG] ADD_TO_RUN: preferHead=${preferHead}, cardsToAdd=${cards.length}, targetRunSize=${targetRun.cards.length}`);
+      
       const arranged = arrangeRun([...targetRun.cards, ...cards], preferHead);
+      console.log(`[DEBUG] Arranged:`, arranged.map(c => `${c.value}${c.suit[0]}${c.represents ? `(as ${c.represents.value}${c.represents.suit[0]})` : ''}`));
+      
       const withRepresentations = applyRepresentations(arranged);
+      console.log(`[DEBUG] Final:`, withRepresentations.map(c => `${c.value}${c.suit[0]}${c.represents ? `(as ${c.represents.value}${c.represents.suit[0]})` : ''}`));
+      
       const context = inferRunContext(withRepresentations);
       if (!context) throw new Error('Final run is invalid');
       const isPure = withRepresentations.every((c: CardDef) => !c.isWild);

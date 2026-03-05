@@ -89,6 +89,27 @@ export function inferRunContext(runCards: CardDef[]): RunContext | null {
   if (match) {
       validSequence = true;
       determinedStartRank = startRankCandidate;
+  } else {
+      // Try other natural cards if the first one leads to out of bounds
+      // (This can happen if floating wilds are at the start and firstFixedIndex is large)
+      for (const fixed of fixedCards) {
+          const rank = getEffectiveRank(fixed);
+          const index = runCards.indexOf(fixed);
+          const start = rank - index;
+          
+          let subMatch = true;
+          for (let i = 0; i < runCards.length; i++) {
+              const r = start + i;
+              if (r < 3 || r > 14) { subMatch = false; break; }
+              const card = runCards[i];
+              if ((!card.isWild || !!card.represents) && getEffectiveRank(card) !== r) { subMatch = false; break; }
+          }
+          if (subMatch) {
+              validSequence = true;
+              determinedStartRank = start;
+              break;
+          }
+      }
   }
 
   if (validSequence) {

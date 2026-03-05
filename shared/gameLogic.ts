@@ -22,43 +22,50 @@ export function getRank(value: string): number {
   return RANK_ORDER[value] || 0;
 }
 
+export function getEffectiveRank(card: CardDef): number {
+  if (card.represents) return getRank(card.represents.value);
+  return getRank(card.value);
+}
+
 export function inferRunContext(runCards: CardDef[]): RunContext | null {
   if (runCards.length < 3) return null; 
 
-  const naturalCards = runCards.filter(c => !c.isWild);
+  const fixedCards = runCards.filter(c => !c.isWild || !!c.represents);
   
-  if (naturalCards.length === 0) return null;
+  if (fixedCards.length === 0) return null;
 
-  const firstNatural = naturalCards[0];
-  const isSet = naturalCards.every(c => c.value === firstNatural.value);
+  const firstFixed = fixedCards[0];
+  const isSet = fixedCards.every(c => (c.represents?.value || c.value) === (firstFixed.represents?.value || firstFixed.value));
 
-  if (isSet && naturalCards.length >= 2) {
+  if (isSet && fixedCards.length >= 2) {
       // Enforce no duplicate natural cards (same suit) in a set
-      const suits = naturalCards.map(c => c.suit);
+      // For sets, we only care about natural cards for duplicate check
+      const naturals = runCards.filter(c => !c.isWild);
+      const suits = naturals.map(c => c.suit);
       if (new Set(suits).size !== suits.length) return null;
 
       return {
           type: 'SET',
-          rank: getRank(firstNatural.value),
+          rank: getEffectiveRank(firstFixed),
           cards: runCards.map(c => ({
               card: c,
-              representedRank: getRank(firstNatural.value),
-              representedSuit: c.isWild ? Suit.Spades : c.suit 
+              representedRank: getEffectiveRank(firstFixed),
+              representedSuit: c.isWild ? (c.represents?.suit || Suit.Spades) : c.suit 
           }))
       };
   }
 
   // SEQUENCE Check
-  const suit = firstNatural.suit;
-  if (!naturalCards.every(c => c.suit === suit)) return null;
+  const suit = (firstFixed.represents?.suit || firstFixed.suit);
+  if (!fixedCards.every(c => (c.represents?.suit || c.suit) === suit)) return null;
 
   let validSequence = false;
   let determinedStartRank = -1;
 
-  let firstNaturalRank = getRank(firstNatural.value);
-  let firstNaturalIndex = runCards.indexOf(firstNatural);
+  let firstFixedRank = getEffectiveRank(firstFixed);
+  let firstFixedIndex = runCards.indexOf(firstFixed);
   
-  let startRankCandidate = firstNaturalRank - firstNaturalIndex;
+  let startRankCandidate = firstFixedRank - firstFixedIndex;
   
   let match = true;
   for (let i = 0; i < runCards.length; i++) {
@@ -71,8 +78,8 @@ export function inferRunContext(runCards: CardDef[]): RunContext | null {
           break;
       }
 
-      if (!c.isWild) {
-          if (getRank(c.value) !== expectedRank) {
+      if (!c.isWild || !!c.represents) {
+          if (getEffectiveRank(c) !== expectedRank) {
               match = false;
               break;
           }
@@ -213,27 +220,27 @@ function canExtendSequence(context: RunContext, end: 'HEAD' | 'TAIL'): boolean {
 }
 
 export function checkRunAmbiguity(cards: CardDef[]): 'NONE' | 'AMBIGUOUS_ENDS' {
-    const wilds = cards.filter(c => c.isWild);
-    const naturals = cards.filter(c => !c.isWild);
+    const floatingWilds = cards.filter(c => c.isWild && !c.represents);
+    const fixed = cards.filter(c => !c.isWild || !!c.represents);
 
-    if (naturals.length <= 1) return 'NONE'; 
+    if (fixed.length <= 1) return 'NONE'; 
 
-    const firstRank = getRank(naturals[0].value);
-    const isSet = naturals.every(c => getRank(c.value) === firstRank);
+    const firstRank = getEffectiveRank(fixed[0]);
+    const isSet = fixed.every(c => getEffectiveRank(c) === firstRank);
     if (isSet) return 'NONE';
 
     // Sequence check (Strict A=14)
-    const sorted = [...naturals].sort((a, b) => getRank(a.value) - getRank(b.value));
+    const sorted = [...fixed].sort((a, b) => getEffectiveRank(a) - getEffectiveRank(b));
     const gaps = calculateTotalGaps(sorted); 
     
     const neededWilds = gaps;
-    const remaining = wilds.length - neededWilds;
+    const remaining = floatingWilds.length - neededWilds;
     
     if (remaining <= 0) return 'NONE';
 
     // Check if can extend BOTH head and tail
-    const minRank = getRank(sorted[0].value);
-    const maxRank = getRank(sorted[sorted.length-1].value);
+    const minRank = getEffectiveRank(sorted[0]);
+    const maxRank = getEffectiveRank(sorted[sorted.length-1]);
     
     const canHead = (minRank - remaining) >= 3; 
     const canTail = (maxRank + remaining) <= 14; 
@@ -244,30 +251,30 @@ export function checkRunAmbiguity(cards: CardDef[]): 'NONE' | 'AMBIGUOUS_ENDS' {
 }
 
 export function arrangeRun(cards: CardDef[], preferHead = false): CardDef[] {
-  const wilds = cards.filter(c => c.isWild);
-  const naturals = cards.filter(c => !c.isWild);
+  const floatingWilds = cards.filter(c => c.isWild && !c.represents);
+  const fixed = cards.filter(c => !c.isWild || !!c.represents);
 
-  if (naturals.length <= 1) {
-    return [...naturals.sort((a, b) => getRank(a.value) - getRank(b.value)), ...wilds];
+  if (fixed.length <= 1) {
+    return [...fixed.sort((a, b) => getEffectiveRank(a) - getEffectiveRank(b)), ...floatingWilds];
   }
 
-  const firstRank = getRank(naturals[0].value);
-  const isSet = naturals.every(c => getRank(c.value) === firstRank);
+  const firstRank = getEffectiveRank(fixed[0]);
+  const isSet = fixed.every(c => getEffectiveRank(c) === firstRank);
 
   if (isSet) {
-    return [...naturals, ...wilds];
+    return [...fixed, ...floatingWilds];
   }
 
   // SEQUENCE (Strict A=14)
-  const sorted = [...naturals].sort((a, b) => getRank(a.value) - getRank(b.value));
+  const sorted = [...fixed].sort((a, b) => getEffectiveRank(a) - getEffectiveRank(b));
   const result: CardDef[] = [];
-  const availableWilds = [...wilds];
+  const availableWilds = [...floatingWilds];
   
   for (let i = 0; i < sorted.length; i++) {
       result.push(sorted[i]);
       if (i < sorted.length - 1) {
-          const currRank = getRank(sorted[i].value);
-          const nextRank = getRank(sorted[i+1].value);
+          const currRank = getEffectiveRank(sorted[i]);
+          const nextRank = getEffectiveRank(sorted[i+1]);
           const gap = Math.max(0, nextRank - currRank - 1);
           
           if (gap > 0) {
@@ -283,8 +290,8 @@ export function arrangeRun(cards: CardDef[], preferHead = false): CardDef[] {
   // Append remaining
   if (availableWilds.length > 0) {
       // Smart Auto-detection logic for forced direction
-      const minRank = getRank(sorted[0].value);
-      const maxRank = getRank(sorted[sorted.length-1].value);
+      const minRank = getEffectiveRank(sorted[0]);
+      const maxRank = getEffectiveRank(sorted[sorted.length-1]);
       const remaining = availableWilds.length;
       
       const canHead = (minRank - remaining) >= 3;
@@ -309,8 +316,8 @@ export function arrangeRun(cards: CardDef[], preferHead = false): CardDef[] {
 function calculateTotalGaps(sortedCards: CardDef[]): number {
     let gaps = 0;
     for (let i = 0; i < sortedCards.length - 1; i++) {
-        const r1 = getRank(sortedCards[i].value);
-        const r2 = getRank(sortedCards[i+1].value);
+        const r1 = getEffectiveRank(sortedCards[i]);
+        const r2 = getEffectiveRank(sortedCards[i+1]);
         const diff = r2 - r1;
         if (diff > 0) gaps += (diff - 1);
         else gaps += 100; 

@@ -104,27 +104,27 @@ const App: React.FC = () => {
     <div className="flex flex-col h-dvh w-full md:max-w-7xl mx-auto bg-emerald-900 shadow-2xl overflow-hidden border-x border-emerald-950 relative select-none">
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/felt.png')]"></div>
       
-      <header className="relative z-30 bg-black/40 backdrop-blur-md px-4 py-2 flex justify-between items-center border-b border-white/10 shrink-0">
+      <header className="relative z-30 bg-black/40 backdrop-blur-md px-4 py-3 flex justify-between items-center border-b border-white/10 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-          <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Dhappa Multiplayer</span>
+          <span className="text-xs font-black text-white/80 uppercase tracking-widest">Dhappa Multiplayer</span>
           <div className="ml-4 flex items-center gap-2">
-            <span className="text-[10px] font-mono text-blue-400">ROOM: {(window as any).ROOM_ID}</span>
+            <span className="text-xs font-mono text-blue-400">ROOM: {(window as any).ROOM_ID}</span>
             <button 
                 onClick={() => {
                     const url = `${window.location.origin}/room/${(window as any).ROOM_ID}`;
                     navigator.clipboard.writeText(url);
                     alert('Share link copied to clipboard!');
                 }}
-                className="text-[10px] text-white/40 hover:text-white/80 transition-colors"
+                className="text-xs text-white/40 hover:text-white/80 transition-colors"
                 title="Copy Share Link"
             >
                 <i className="fa-solid fa-share-nodes"></i>
             </button>
           </div>
         </div>
-        <div className="flex gap-1 text-[8px] font-black text-white/40">
-           PHASE: <span className="text-yellow-400">{phase.toUpperCase()}</span>
+        <div className="flex gap-2 text-xs font-black text-white/40">
+           PHASE: <span className="text-yellow-400 uppercase">{phase}</span>
         </div>
       </header>
 
@@ -185,7 +185,6 @@ const App: React.FC = () => {
                     </header>
                     <PlayerBoard 
                         players={viewMode === 'team_runs' ? myTeamPlayers : oppTeamPlayers} 
-                        currentPlayerIndex={currentPlayerIndex}
                         onRunClick={handleRunClick}
                         isSelectingMode={isSelectingRun}
                         getRunValidity={(run) => {
@@ -204,7 +203,6 @@ const App: React.FC = () => {
             </h2>
             <PlayerBoard 
                 players={oppTeamPlayers} 
-                currentPlayerIndex={currentPlayerIndex}
                 onRunClick={handleRunClick}
                 isSelectingMode={isSelectingRun}
                 getRunValidity={(run) => {
@@ -270,8 +268,8 @@ const App: React.FC = () => {
             isDisabled={!isMyTurn}
         />
 
-        <div className="h-6 flex items-center justify-center bg-black/40">
-           <p className="text-[8px] font-bold text-yellow-400/60 uppercase tracking-widest">
+        <div className="h-10 flex items-center justify-center bg-black/60 border-t border-white/5">
+           <p className="text-[10px] sm:text-xs font-black text-yellow-400 uppercase tracking-[0.15em] text-center px-4 leading-relaxed">
                {isSelectingRun 
                     ? "Select a valid run (yours or teammate's) to add cards..." 
                     : (mustPlayCard 

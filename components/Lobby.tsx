@@ -58,32 +58,32 @@ const Lobby: React.FC<LobbyProps> = ({ initialRoomId }) => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
-      <h1 className="text-4xl font-bold mb-8 text-blue-400">Dhappa Baaji</h1>
+      <h1 className="text-4xl md:text-5xl font-black mb-10 text-blue-400 uppercase tracking-tighter">Dhappa Baaji</h1>
       
-      <div className="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md">
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Your Name</label>
+      <div className="bg-slate-800 p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md border border-white/5">
+        <div className="mb-6">
+          <label className="block text-sm font-black uppercase tracking-widest mb-2 text-slate-400">Your Name</label>
           <input 
             type="text" 
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
-            className="w-full bg-slate-700 border border-slate-600 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full bg-slate-700 border border-slate-600 rounded-xl p-3 text-base focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             placeholder="Enter your name"
           />
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">Rejoin Passcode (4+ digits)</label>
+        <div className="mb-8">
+          <label className="block text-sm font-black uppercase tracking-widest mb-2 text-slate-400">Rejoin Passcode (4+ digits)</label>
           <input 
             type="password" 
             inputMode="numeric"
             pattern="[0-9]*"
             value={passcode}
             onChange={(e) => setPasscode(e.target.value)}
-            className="w-full bg-slate-700 border border-slate-600 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full bg-slate-700 border border-slate-600 rounded-xl p-3 text-base focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             placeholder="Choose a passcode"
           />
-          <p className="text-[10px] text-slate-500 mt-1">Use this to rejoin from other devices.</p>
+          <p className="text-[11px] text-slate-500 mt-2 font-medium">Use this to rejoin from other devices.</p>
         </div>
 
         <div className="space-y-4">

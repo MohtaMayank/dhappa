@@ -31,7 +31,7 @@ const Hand: React.FC<HandProps> = ({ cards, selectedIds, onToggleCard, isDisable
                 isSelected={isSelected}
                 onClick={() => !isDisabled && onToggleCard(card.id)}
                 isFirst={true}
-                className={isDisabled ? 'grayscale opacity-50' : ''}
+                className={isDisabled ? 'cursor-default' : 'cursor-pointer'}
               />
             </div>
           );

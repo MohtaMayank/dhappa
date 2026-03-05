@@ -274,7 +274,7 @@ const App: React.FC = () => {
         </div>
 
         <Hand 
-            cards={typeof currentPlayer.hand === 'number' ? [] : currentPlayer.hand} 
+            cards={typeof players[0].hand === 'number' ? [] : players[0].hand} 
             selectedIds={selectedInHand} 
             onToggleCard={selectCardInHand} 
             isDisabled={!isMyTurn}

@@ -158,16 +158,6 @@ const App: React.FC = () => {
                     phase={phase}
             />
 
-            {/* Turn Banner */}
-            <div className="absolute top-[35%] left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                <div className="bg-black/60 backdrop-blur-md px-6 py-2 rounded-full border border-yellow-400/30 flex items-center gap-3 shadow-2xl animate-in zoom-in-95 duration-700">
-                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
-                    <span className="text-[10px] font-black text-white/90 uppercase tracking-[0.2em] whitespace-nowrap">
-                        Turn: <span className="text-yellow-400">{players[currentPlayerIndex].name || `Player ${currentPlayerIndex + 1}`}</span>
-                    </span>
-                </div>
-            </div>
-
             <div className="absolute top-8 left-1/2 -translate-x-1/2">
                 <PlayerAvatar player={players[2]} isCurrentTurn={currentPlayerIndex === 2} position="top" />
             </div>

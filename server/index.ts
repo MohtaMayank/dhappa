@@ -5,7 +5,7 @@ import cors from 'cors';
 import type { GameState, Player, Run, CardDef } from '../shared/types';
 import { Team } from '../shared/types';
 import { createDeck, generateId, sortHand } from '../shared/constants';
-import { arrangeRun, validateAddToRun, inferRunContext, isValidNPick } from '../shared/gameLogic';
+import { arrangeRun, validateAddToRun, inferRunContext, isValidNPick, applyRepresentations } from '../shared/gameLogic';
 import { createClient } from 'redis';
 import { getScenario } from '../scenarios';
 
@@ -320,7 +320,8 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       const { cards } = payload;
       
       const arranged = arrangeRun(cards, false);
-      const context = inferRunContext(arranged);
+      const withRepresentations = applyRepresentations(arranged);
+      const context = inferRunContext(withRepresentations);
       if (!context) throw new Error('Invalid run arrangement');
       
       const isPure = arranged.every((c: CardDef) => !c.isWild);
@@ -330,7 +331,7 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       const newHand = player.hand.filter((c: CardDef) => !cards.find((rc: any) => rc.id === c.id));
       const newRun: Run = {
         id: generateId(),
-        cards: arranged,
+        cards: withRepresentations,
         isPure,
         isSet: context.type === 'SET'
       };
@@ -375,14 +376,15 @@ function processGameAction(state: GameState, action: { type: string; payload: an
 
       const preferHead = payload.options?.preferHead || false;
       const arranged = arrangeRun([...targetRun.cards, ...cards], preferHead);
-      const context = inferRunContext(arranged);
+      const withRepresentations = applyRepresentations(arranged);
+      const context = inferRunContext(withRepresentations);
       if (!context) throw new Error('Final run is invalid');
-      const isPure = arranged.every((c: CardDef) => !c.isWild);
+      const isPure = withRepresentations.every((c: CardDef) => !c.isWild);
 
       const newHand = player.hand.filter((c: CardDef) => !cards.find((rc: any) => rc.id === c.id));
       const updatedRun: Run = {
         ...targetRun,
-        cards: arranged,
+        cards: withRepresentations,
         isPure,
         isSet: context.type === 'SET'
       };

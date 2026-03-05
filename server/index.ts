@@ -367,6 +367,10 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       const targetPlayer = state.players[targetPlayerIndex];
       if (!targetPlayer) throw new Error('Target player not found');
       
+      if (targetPlayer.team !== player.team) {
+        throw new Error('Can only add cards to runs of your own team');
+      }
+      
       const targetRunIndex = targetPlayer.runs.findIndex((r: Run) => r.id === runId);
       const targetRun = targetPlayer.runs[targetRunIndex];
       if (!targetRun) throw new Error('Target run not found');

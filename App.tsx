@@ -188,9 +188,10 @@ const App: React.FC = () => {
                         onRunClick={handleRunClick}
                         isSelectingMode={isSelectingRun}
                         getRunValidity={(run) => {
-                  const cardsToAdd = currentPlayer.hand.filter(c => selectedInHand.includes(c.id));
-                  return validateAddToRun(cardsToAdd, run).type !== 'INVALID';
-                }}
+                            if (viewMode !== 'team_runs') return false;
+                            const cardsToAdd = currentPlayer.hand.filter(c => selectedInHand.includes(c.id));
+                            return validateAddToRun(cardsToAdd, run).type !== 'INVALID';
+                        }}
                     />
                 </div>
             )}
@@ -205,10 +206,7 @@ const App: React.FC = () => {
                 players={oppTeamPlayers} 
                 onRunClick={handleRunClick}
                 isSelectingMode={isSelectingRun}
-                getRunValidity={(run) => {
-                  const cardsToAdd = currentPlayer.hand.filter(c => selectedInHand.includes(c.id));
-                  return validateAddToRun(cardsToAdd, run).type !== 'INVALID';
-                }}
+                getRunValidity={() => false}
             />
         </aside>
       </div>

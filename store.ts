@@ -189,6 +189,8 @@ export const useGameStore = create<GameStore>((set, get) => {
 
       // Check for ambiguity
       const runOwner = players.find(p => p.runs.some(r => r.id === runId));
+      if (!runOwner || runOwner.team !== player.team) return;
+      
       const targetRun = runOwner?.runs.find(r => r.id === runId);
       if (targetRun) {
         const validation = validateAddToRun(selectedCards, targetRun);

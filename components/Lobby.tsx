@@ -33,6 +33,10 @@ const Lobby: React.FC<LobbyProps> = ({ initialRoomId }) => {
     }
     const cleanPlayerName = playerName.trim();
     localStorage.setItem('dhappa_player_name', cleanPlayerName);
+    
+    // Update URL to /room/{roomId}
+    window.history.pushState({}, '', `/room/${cleanRoomId}`);
+    
     initGame(cleanPlayerName, cleanRoomId, passcode.trim());
   };
 
@@ -41,6 +45,10 @@ const Lobby: React.FC<LobbyProps> = ({ initialRoomId }) => {
     const newRoomId = Math.random().toString(36).substring(2, 9).toUpperCase();
     const cleanPlayerName = playerName.trim();
     localStorage.setItem('dhappa_player_name', cleanPlayerName);
+    
+    // Update URL to /room/{roomId}
+    window.history.pushState({}, '', `/room/${newRoomId}`);
+    
     initGame(cleanPlayerName, newRoomId, passcode.trim());
   };
 

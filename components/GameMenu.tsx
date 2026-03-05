@@ -11,7 +11,7 @@ const GameMenu: React.FC = () => {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 z-[120] w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/80 hover:bg-black/60 hover:text-white transition-all border border-white/10 shadow-lg active:scale-95"
+        className="fixed top-12 right-4 z-[120] w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/80 hover:bg-black/60 hover:text-white transition-all border border-white/10 shadow-lg active:scale-95"
       >
         <i className="fa-solid fa-bars text-sm"></i>
       </button>

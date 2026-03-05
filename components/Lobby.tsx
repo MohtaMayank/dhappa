@@ -58,7 +58,7 @@ const Lobby: React.FC<LobbyProps> = ({ initialRoomId }) => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
-      <h1 className="text-4xl md:text-5xl font-black mb-10 text-blue-400 uppercase tracking-tighter">Dhappa Baaji</h1>
+      <h1 className="text-5xl md:text-6xl font-black mb-10 text-blue-400 uppercase tracking-tighter">Dhappa</h1>
       
       <div className="bg-slate-800 p-8 md:p-10 rounded-2xl shadow-2xl w-full max-w-md border border-white/5">
         <div className="mb-6">

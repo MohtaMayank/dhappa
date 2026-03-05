@@ -104,26 +104,26 @@ const App: React.FC = () => {
     <div className="flex flex-col h-dvh w-full md:max-w-7xl mx-auto bg-emerald-900 shadow-2xl overflow-hidden border-x border-emerald-950 relative select-none">
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/felt.png')]"></div>
       
-      <header className="relative z-30 bg-black/40 backdrop-blur-md px-4 py-3 flex justify-between items-center border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-          <span className="text-xs font-black text-white/80 uppercase tracking-widest">Dhappa Multiplayer</span>
-          <div className="ml-4 flex items-center gap-2">
-            <span className="text-xs font-mono text-blue-400">ROOM: {(window as any).ROOM_ID}</span>
+      <header className="relative z-30 bg-black/40 backdrop-blur-md px-4 py-2 flex justify-between items-center border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0"></div>
+          <span className="text-[10px] font-black text-white/80 uppercase tracking-widest shrink-0">Dhappa</span>
+          <div className="ml-2 flex items-center gap-2 overflow-hidden">
+            <span className="text-[10px] font-mono text-blue-400 shrink-0">ROOM: {(window as any).ROOM_ID}</span>
             <button 
                 onClick={() => {
                     const url = `${window.location.origin}/room/${(window as any).ROOM_ID}`;
                     navigator.clipboard.writeText(url);
                     alert('Share link copied to clipboard!');
                 }}
-                className="text-xs text-white/40 hover:text-white/80 transition-colors"
+                className="text-[10px] text-white/40 hover:text-white/80 transition-colors shrink-0"
                 title="Copy Share Link"
             >
                 <i className="fa-solid fa-share-nodes"></i>
             </button>
           </div>
         </div>
-        <div className="flex gap-2 text-xs font-black text-white/40">
+        <div className="flex gap-2 text-[10px] font-black text-white/40 shrink-0">
            PHASE: <span className="text-yellow-400 uppercase">{phase}</span>
         </div>
       </header>

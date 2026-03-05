@@ -38,10 +38,10 @@ interface GameStore extends GameState {
   selectCardInHand: (cardId: string) => void;
   discardCard: (cardId: string) => void;
   startRunCreation: () => void;
-  resolveCreateRunAmbiguity: (headRank?: number, tailRank?: number) => void;
+  resolveCreateRunAmbiguity: (direction: 'HEAD' | 'TAIL') => void;
   cancelRunCreation: () => void;
   addToRun: (runId: string) => void;
-  resolveAddToRunAmbiguity: (preferHead: boolean) => void;
+  resolveAddToRunAmbiguity: (direction: 'HEAD' | 'TAIL') => void;
   cancelAddToRunAmbiguity: () => void;
   setSelectingRun: (isSelecting: boolean) => void;
   toggleNPick: (n: number | null) => void;
@@ -162,15 +162,17 @@ export const useGameStore = create<GameStore>((set, get) => {
       }
     },
 
-    resolveCreateRunAmbiguity: (headRank, tailRank) => {
+    resolveCreateRunAmbiguity: (direction) => {
       const { runCreationAmbiguity } = get();
       if (!runCreationAmbiguity) return;
       
+      const preferHead = direction === 'HEAD';
+
       socket.emit('game_action', (window as any).ROOM_ID, {
         type: 'CREATE_RUN',
         payload: { 
           cards: runCreationAmbiguity.cards, 
-          options: { headRank, tailRank } 
+          options: { preferHead } 
         }
       });
       
@@ -208,10 +210,12 @@ export const useGameStore = create<GameStore>((set, get) => {
       set({ selectedInHand: [], isSelectingRun: false });
     },
 
-    resolveAddToRunAmbiguity: (preferHead) => {
+    resolveAddToRunAmbiguity: (direction) => {
       const { addToRunAmbiguity } = get();
       if (!addToRunAmbiguity) return;
       
+      const preferHead = direction === 'HEAD';
+
       socket.emit('game_action', (window as any).ROOM_ID, {
         type: 'ADD_TO_RUN',
         payload: { 

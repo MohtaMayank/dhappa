@@ -313,7 +313,7 @@ const App: React.FC = () => {
       <AmbiguityModal 
         isOpen={!!addToRunAmbiguity?.isOpen} 
         type="ADD_TO_RUN"
-        onResolve={(h, t) => resolveAddToRunAmbiguity(h !== undefined)}
+        onResolve={resolveAddToRunAmbiguity}
         onCancel={cancelAddToRunAmbiguity}
         headRank={addToRunAmbiguity?.headRank}
         tailRank={addToRunAmbiguity?.tailRank}

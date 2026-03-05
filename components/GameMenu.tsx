@@ -40,7 +40,10 @@ const GameMenu: React.FC = () => {
             
             {/* Menu Options */}
             <div className="p-2 space-y-1 overflow-y-auto">
-                <button className="w-full text-left p-4 rounded-xl hover:bg-white/5 transition-colors group flex items-center gap-4">
+                <button 
+                    onClick={() => window.location.href = '/'}
+                    className="w-full text-left p-4 rounded-xl hover:bg-white/5 transition-colors group flex items-center gap-4"
+                >
                     <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                          <i className="fa-solid fa-plus"></i>
                     </div>
@@ -50,7 +53,14 @@ const GameMenu: React.FC = () => {
                     </div>
                 </button>
 
-                <button className="w-full text-left p-4 rounded-xl hover:bg-white/5 transition-colors group flex items-center gap-4">
+                <button 
+                    onClick={() => {
+                        const url = `${window.location.origin}/room/${(window as any).ROOM_ID}`;
+                        navigator.clipboard.writeText(url);
+                        alert('Share link copied to clipboard!');
+                    }}
+                    className="w-full text-left p-4 rounded-xl hover:bg-white/5 transition-colors group flex items-center gap-4"
+                >
                     <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                          <i className="fa-solid fa-share-nodes"></i>
                     </div>

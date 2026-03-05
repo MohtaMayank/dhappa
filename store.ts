@@ -6,7 +6,8 @@ import { ScenarioKey, getScenario } from './scenarios';
 import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER, applyRepresentations, inferRunContext } from './shared/gameLogic';
 import { io, Socket } from 'socket.io-client';
 
-const socket: Socket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:8081');
+const serverUrl = import.meta.env.VITE_SERVER_URL || `http://${window.location.hostname}:8081`;
+const socket: Socket = io(serverUrl);
 
 interface GameStore extends GameState {
   // Client-only state
@@ -28,7 +29,7 @@ interface GameStore extends GameState {
   nPickPreview: number | null;
   
   // Actions
-  initGame: (playerName: string, roomId: string) => void;
+  initGame: (playerName: string, roomId: string, passcode: string, token?: string) => void;
   drawFromDeck: () => void;
   pickFromDiscard: (n: number) => void;
   confirmDraw: () => void;
@@ -60,6 +61,15 @@ export const useGameStore = create<GameStore>((set, get) => {
     }
   });
 
+  socket.on('auth_success', (data: { roomId: string, playerIndex: number, token: string }) => {
+    console.log('Authentication successful:', data);
+    (window as any).ROOM_ID = data.roomId;
+    
+    // Persist to localStorage
+    const authKey = `dhappa_auth_${data.roomId}`;
+    localStorage.setItem(authKey, data.token);
+  });
+
   socket.on('error', (message: string) => {
     console.error('Server error:', message);
     alert(message);
@@ -78,7 +88,6 @@ export const useGameStore = create<GameStore>((set, get) => {
     godMode: false,
     isSelectingRun: false,
     addToRunAmbiguity: null,
-    mustPlayCard: null,
     runCreationAmbiguity: null,
     selectedInHand: [],
     lastDrawnCard: null,
@@ -86,9 +95,9 @@ export const useGameStore = create<GameStore>((set, get) => {
     isNPickActive: false,
     nPickPreview: null,
 
-    initGame: (playerName, roomId) => {
-      (window as any).ROOM_ID = roomId; // Hack for now to store room id
-      socket.emit('join_room', roomId, playerName);
+    initGame: (playerName, roomId, passcode, token) => {
+      (window as any).ROOM_ID = roomId; 
+      socket.emit('join_room', roomId, playerName, passcode, token);
     },
 
     drawFromDeck: () => {

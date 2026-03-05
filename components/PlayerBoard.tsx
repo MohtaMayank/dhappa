@@ -6,6 +6,7 @@ import Run from './Run';
 
 interface PlayerBoardProps {
   players: Player[];
+  currentPlayerIndex: number;
   onRunClick?: (run: RunType) => void;
   isSelectingMode?: boolean;
   getRunValidity?: (run: RunType) => boolean;
@@ -13,6 +14,7 @@ interface PlayerBoardProps {
 
 const PlayerBoard: React.FC<PlayerBoardProps> = ({ 
   players, 
+  currentPlayerIndex,
   onRunClick,
   isSelectingMode,
   getRunValidity
@@ -34,19 +36,36 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
     <section className="flex flex-col gap-10 md:gap-1 py-4">
       {players.map((player) => {
         const hasRuns = player.runs.length > 0;
-        
+        // The player object in sidebars might be from different indices. 
+        // We need to find the absolute index in the global store.
+        // For simplicity, we can assume the caller passes the right global index or we just check name/id
+        // However, a better way is for the caller to pass it.
+        const isTurn = player.name !== '' && player.id === `player-${currentPlayerIndex}`;
+        const hasName = player.name && player.name.trim() !== '';
+
         return (
-          <div key={player.id} className="flex flex-col gap-4 md:gap-1 animate-in fade-in slide-in-from-left-4 duration-500">
-            <header className="flex items-center gap-3 border-l-4 border-emerald-500 pl-3 py-1 bg-white/5 rounded-r-lg">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black ${player.team === 'Team A' ? 'bg-blue-600' : 'bg-red-600'} text-white shadow-lg border border-white/20`}>
-                {player.name[0]}
+          <div key={player.id} className={`flex flex-col gap-4 md:gap-1 animate-in fade-in slide-in-from-left-4 duration-500 rounded-xl p-1 transition-all ${isTurn ? 'bg-yellow-400/5 ring-1 ring-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.05)]' : 'opacity-60'}`}>
+            <header className={`flex items-center justify-between border-l-4 ${isTurn ? 'border-yellow-400 bg-yellow-400/10' : 'border-emerald-500 bg-white/5'} pl-3 py-1.5 rounded-r-lg shadow-sm`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black ${player.team === 'Team A' ? 'bg-blue-600' : 'bg-red-600'} text-white shadow-lg border border-white/20 transition-transform ${isTurn ? 'scale-110 ring-2 ring-yellow-400' : ''}`}>
+                    {hasName ? player.name[0].toUpperCase() : <i className="fa-solid fa-user text-white/40 text-[8px]"></i>}
+                </div>
+                <div className="flex flex-col">
+                    <span className={`text-[10px] font-black uppercase tracking-wider transition-colors ${isTurn ? 'text-yellow-400' : (hasName ? 'text-white' : 'text-white/30 italic')}`}>
+                        {hasName ? player.name : 'Waiting...'}
+                    </span>
+                    <span className={`text-[7px] font-bold uppercase tracking-widest ${player.hasOpened ? 'text-emerald-400' : 'text-white/30'}`}>
+                    {player.hasOpened ? 'OPENED' : 'NOT OPENED'}
+                    </span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-white uppercase tracking-wider">{player.name}</span>
-                <span className={`text-[7px] font-bold uppercase tracking-widest ${player.hasOpened ? 'text-emerald-400' : 'text-white/30'}`}>
-                  {player.hasOpened ? 'OPENED' : 'NOT OPENED'}
-                </span>
-              </div>
+
+              {isTurn && (
+                  <div className="mr-3 flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></div>
+                      <span className="text-[7px] font-black text-yellow-400 uppercase tracking-widest">Turn</span>
+                  </div>
+              )}
             </header>
 
             {!hasRuns ? (

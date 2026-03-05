@@ -30,8 +30,27 @@ const App: React.FC = () => {
   const [isNPickerOpen, setIsNPickerOpen] = useState(false);
   const [inspectedRun, setInspectedRun] = useState<Run | null>(null);
 
+  // URL Routing and Auto-rejoin
+  useEffect(() => {
+    const pathParts = window.location.pathname.split('/');
+    const roomId = pathParts[1] === 'room' ? pathParts[2] : null;
+    
+    if (roomId) {
+      (window as any).ROOM_ID = roomId;
+      const token = localStorage.getItem(`dhappa_auth_${roomId}`);
+      const savedName = localStorage.getItem('dhappa_player_name') || '';
+      
+      if (token && players.length === 0) {
+        console.log('Auto-rejoining room:', roomId);
+        initGame(savedName, roomId, '', token);
+      }
+    }
+  }, [players.length, initGame]);
+
   if (players.length === 0) {
-    return <Lobby />;
+    const pathParts = window.location.pathname.split('/');
+    const roomId = pathParts[1] === 'room' ? pathParts[2] : null;
+    return <Lobby initialRoomId={roomId || ''} />;
   }
 
   const currentPlayer = players[currentPlayerIndex];
@@ -89,7 +108,20 @@ const App: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
           <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Dhappa Multiplayer</span>
-          <span className="ml-4 text-[10px] font-mono text-blue-400">ROOM: {(window as any).ROOM_ID}</span>
+          <div className="ml-4 flex items-center gap-2">
+            <span className="text-[10px] font-mono text-blue-400">ROOM: {(window as any).ROOM_ID}</span>
+            <button 
+                onClick={() => {
+                    const url = `${window.location.origin}/room/${(window as any).ROOM_ID}`;
+                    navigator.clipboard.writeText(url);
+                    alert('Share link copied to clipboard!');
+                }}
+                className="text-[10px] text-white/40 hover:text-white/80 transition-colors"
+                title="Copy Share Link"
+            >
+                <i className="fa-solid fa-share-nodes"></i>
+            </button>
+          </div>
         </div>
         <div className="flex gap-1 text-[8px] font-black text-white/40">
            PHASE: <span className="text-yellow-400">{phase.toUpperCase()}</span>
@@ -104,6 +136,7 @@ const App: React.FC = () => {
             </h2>
             <PlayerBoard 
                 players={myTeamPlayers} 
+                currentPlayerIndex={currentPlayerIndex}
                 onRunClick={handleRunClick}
                 isSelectingMode={isSelectingRun}
                 getRunValidity={(run) => {
@@ -124,6 +157,16 @@ const App: React.FC = () => {
                     isPlayerTurn={isMyTurn}
                     phase={phase}
             />
+
+            {/* Turn Banner */}
+            <div className="absolute top-[35%] left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                <div className="bg-black/60 backdrop-blur-md px-6 py-2 rounded-full border border-yellow-400/30 flex items-center gap-3 shadow-2xl animate-in zoom-in-95 duration-700">
+                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
+                    <span className="text-[10px] font-black text-white/90 uppercase tracking-[0.2em] whitespace-nowrap">
+                        Turn: <span className="text-yellow-400">{players[currentPlayerIndex].name || `Player ${currentPlayerIndex + 1}`}</span>
+                    </span>
+                </div>
+            </div>
 
             <div className="absolute top-8 left-1/2 -translate-x-1/2">
                 <PlayerAvatar player={players[2]} isCurrentTurn={currentPlayerIndex === 2} position="top" />
@@ -152,6 +195,7 @@ const App: React.FC = () => {
                     </header>
                     <PlayerBoard 
                         players={viewMode === 'team_runs' ? myTeamPlayers : oppTeamPlayers} 
+                        currentPlayerIndex={currentPlayerIndex}
                         onRunClick={handleRunClick}
                         isSelectingMode={isSelectingRun}
                         getRunValidity={(run) => {
@@ -170,6 +214,7 @@ const App: React.FC = () => {
             </h2>
             <PlayerBoard 
                 players={oppTeamPlayers} 
+                currentPlayerIndex={currentPlayerIndex}
                 onRunClick={handleRunClick}
                 isSelectingMode={isSelectingRun}
                 getRunValidity={(run) => {

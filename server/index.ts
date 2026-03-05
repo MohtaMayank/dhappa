@@ -13,6 +13,19 @@ const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
+interface PlayerAuth {
+  name: string;
+  passcode: string;
+  token: string;
+}
+
+interface RoomContainer {
+  state: GameState;
+  auth: Record<number, PlayerAuth>;
+}
+
+import { randomUUID } from 'crypto';
+
 const roomAssignments: Record<string, Record<string, number>> = {};
 
 redisClient.on('error', (err) => console.log('Redis Client Error', err));
@@ -22,13 +35,13 @@ const app = express();
 app.use(cors());
 
 // Redis repository functions
-async function saveRoomState(roomId: string, state: GameState) {
-  await redisClient.set(`room:${roomId}`, JSON.stringify(state), {
+async function saveRoom(roomId: string, container: RoomContainer) {
+  await redisClient.set(`room:${roomId}`, JSON.stringify(container), {
     EX: 86400 // 24 hours TTL
   });
 }
 
-async function loadRoomState(roomId: string): Promise<GameState | null> {
+async function loadRoom(roomId: string): Promise<RoomContainer | null> {
   const data = await redisClient.get(`room:${roomId}`);
   return data ? JSON.parse(data.toString()) : null;
 }
@@ -48,7 +61,7 @@ function initGameState(playerCount: number = 4): GameState {
   const cardsPerPlayer = playerCount === 4 ? 27 : 21;
   const players: Player[] = Array.from({ length: playerCount }, (_, i) => ({
     id: `player-${i}`,
-    name: `Player ${i + 1}`,
+    name: '', // Initialize with empty name
     team: i % 2 === 0 ? Team.A : Team.B,
     hand: sortHand(deck.splice(0, cardsPerPlayer)),
     runs: [],
@@ -78,44 +91,93 @@ function initGameState(playerCount: number = 4): GameState {
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  socket.on('join_room', async (roomId: string, playerName: string) => {
+  socket.on('join_room', async (roomId: string, name: string, passcode: string, token?: string) => {
     socket.join(roomId);
     
-    let roomState = await loadRoomState(roomId);
-    if (!roomState) {
+    let container = await loadRoom(roomId);
+    if (!container) {
       console.log(`Initializing new game for room: ${roomId}`);
-      roomState = initGameState();
-      await saveRoomState(roomId, roomState);
+      container = {
+        state: initGameState(),
+        auth: {}
+      };
+      // Save it immediately so others see the room as initialized
+      await saveRoom(roomId, container);
     }
 
     if (!roomAssignments[roomId]) roomAssignments[roomId] = {};
-    let pIdx = roomAssignments[roomId][socket.id];
-    if (pIdx === undefined) {
-        const taken = Object.values(roomAssignments[roomId]);
-        pIdx = [0, 1, 2, 3].find(i => !taken.includes(i)) ?? -1;
-        roomAssignments[roomId][socket.id] = pIdx;
+    
+    let pIdx: number = -1;
+    let finalToken: string | undefined = token;
+
+    // 1. Try Token Match (Same device refresh)
+    if (token) {
+        const foundIdx = Object.keys(container.auth).find(idx => container.auth[parseInt(idx)].token === token);
+        if (foundIdx !== undefined) pIdx = parseInt(foundIdx);
     }
 
-    console.log(`User ${socket.id} (${playerName}) joined room: ${roomId} as Player ${pIdx}`);
+    // 2. Try Name + Passcode Match (Manual Rejoin)
+    if (pIdx === -1) {
+        const foundIdx = Object.keys(container.auth).find(idx => {
+            const a = container.auth[parseInt(idx)];
+            return a.name === name && a.passcode === passcode;
+        });
+        if (foundIdx !== undefined) {
+            pIdx = parseInt(foundIdx);
+            finalToken = container.auth[pIdx].token; // Re-use existing token
+        }
+    }
+
+    // 3. New Join
+    if (pIdx === -1) {
+        // Find first empty seat
+        const takenSeats = Object.keys(container.auth).map(i => parseInt(i));
+        const nextSeat = [0, 1, 2, 3].find(i => !takenSeats.includes(i));
+        
+        if (nextSeat !== undefined) {
+            // Ensure name is unique in this room for new seats
+            const nameExists = Object.values(container.auth).some(a => a.name === name);
+            if (nameExists) {
+                socket.emit('error', 'Name already taken in this room. If this is you, enter your passcode.');
+                return;
+            }
+
+            pIdx = nextSeat;
+            finalToken = randomUUID();
+            container.auth[pIdx] = { name, passcode, token: finalToken };
+            container.state.players[pIdx].name = name; // Update name in state
+            await saveRoom(roomId, container);
+        } else {
+            socket.emit('error', 'Room is full');
+            return;
+        }
+    }
+
+    roomAssignments[roomId][socket.id] = pIdx;
     
-    socket.emit('state_update', redactState(roomState, pIdx));
-    socket.to(roomId).emit('player_joined', { id: socket.id, name: playerName });
+    console.log(`User ${socket.id} (${name}) joined room: ${roomId} as Player ${pIdx}`);
+    
+    // Explicitly send the assigned index and token to the user for persistence
+    socket.emit('auth_success', { roomId, playerIndex: pIdx, token: finalToken });
+    socket.emit('state_update', redactState(container.state, pIdx));
+    socket.to(roomId).emit('player_joined', { id: socket.id, name: name });
   });
 
   socket.on('game_action', async (roomId: string, action: { type: string; payload: any }) => {
-    let roomState = await loadRoomState(roomId);
-    if (!roomState) return;
+    let container = await loadRoom(roomId);
+    if (!container) return;
 
     console.log(`Action ${action.type} received for room ${roomId}`);
 
     try {
-      const newState = processGameAction(roomState, action);
-      await saveRoomState(roomId, newState);
+      const newState = processGameAction(container.state, action);
+      container.state = newState;
+      await saveRoom(roomId, container);
       
       const sockets = await io.in(roomId).fetchSockets();
       for (const s of sockets) {
         const idx = roomAssignments[roomId]?.[s.id] ?? -1;
-        s.emit('state_update', redactState(newState, idx));
+        s.emit('state_update', redactState(container.state, idx));
       }
     } catch (error: any) {
       console.error(`Action validation failed: ${error.message}`);

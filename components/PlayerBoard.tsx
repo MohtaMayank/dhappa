@@ -84,6 +84,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                             return (
                                 <Run 
                                 key={run.id} 
+                                id={run.id}
                                 data={run.cards} 
                                 onClick={() => onRunClick?.(run)}
                                 className={opacityClass}
@@ -109,6 +110,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                             return (
                                 <Run 
                                 key={run.id} 
+                                id={run.id}
                                 data={run.cards} 
                                 onClick={() => onRunClick?.(run)}
                                 className={opacityClass}

@@ -25,7 +25,7 @@ const TableCenter: React.FC<TableCenterProps> = ({
   return (
     <div className="flex items-center gap-6 sm:gap-12 md:gap-16 relative z-20">
       {/* Draw Pile */}
-      <div className="flex flex-col items-center gap-1 group">
+      <div className="flex flex-col items-center gap-1 group" data-testid="draw-pile">
         <div 
           onClick={isPlayerTurn && phase === 'draw' ? onDraw : undefined}
           className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24 rounded-md border-2 border-black/30 bg-emerald-800 shadow-2xl cursor-pointer transition-all active:scale-95 ${isPlayerTurn && phase === 'draw' ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-emerald-900 animate-pulse' : ''}`}
@@ -41,7 +41,7 @@ const TableCenter: React.FC<TableCenterProps> = ({
       </div>
 
       {/* Discard Pile */}
-      <div className="flex flex-col items-center gap-1 group">
+      <div className="flex flex-col items-center gap-1 group" data-testid="discard-pile">
         <div 
           onClick={onOpenDiscard}
           className={`relative w-11 h-14 sm:w-13 sm:h-18 md:w-16 md:h-24 rounded-md cursor-pointer transition-all hover:scale-105 active:scale-95 ${isPlayerTurn && phase === 'draw' ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-emerald-900' : ''}`}

@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "infra:up": "docker start dhappa-redis 2>/dev/null || docker run -d --name dhappa-redis -p 6379:6379 redis",
+    "infra:stop": "docker stop dhappa-redis",
+    "test:e2e": "npm run infra:up && npx playwright test"
   },
   "dependencies": {
     "react": "^19.2.3",
@@ -15,6 +18,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.23",

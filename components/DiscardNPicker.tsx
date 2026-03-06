@@ -47,6 +47,7 @@ const DiscardNPicker: React.FC<DiscardNPickerProps> = ({ pile, onPick, onClose, 
               return (
                 <div 
                   key={card.id}
+                  data-testid={`n-pick-option-${currentNumFromTop}`}
                   className={`ml-[-20px] transition-all duration-300 relative ${isHovered || isSelected ? '-translate-y-4 scale-110 z-50' : 'hover:-translate-y-2'}`}
                   onMouseEnter={() => setHoverIdx(idx)}
                   onMouseLeave={() => setHoverIdx(null)}

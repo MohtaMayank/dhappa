@@ -23,7 +23,7 @@ const App: React.FC = () => {
     isSelectingRun, setSelectingRun,
     addToRunAmbiguity, resolveAddToRunAmbiguity, cancelAddToRunAmbiguity,
     runCreationAmbiguity, resolveCreateRunAmbiguity, cancelRunCreation,
-    cancelDraw, mustPlayCard
+    cancelDraw, mustPlayCard, winner
   } = useGameStore();
 
   const [viewMode, setViewMode] = useState<'hand' | 'team_runs' | 'opponent_runs'>('hand');
@@ -105,7 +105,7 @@ const App: React.FC = () => {
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/felt.png')]"></div>
       
       <header className="relative z-30 bg-black/40 backdrop-blur-md px-4 py-2 flex justify-between items-center border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-2 overflow-hidden">
+        <div className="flex items-center gap-2 overflow-hidden pl-8 md:pl-0">
           <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0"></div>
           <span className="text-[10px] font-black text-white/80 uppercase tracking-widest shrink-0">Dhappa</span>
           <div className="ml-2 flex items-center gap-2 overflow-hidden">
@@ -216,6 +216,7 @@ const App: React.FC = () => {
           <div className="flex gap-2">
               <button 
                   onClick={startRunCreation}
+                  data-testid="open-run-btn"
                   disabled={!isMyTurn || phase !== 'play' || selectedInHand.length < 3}
                   className="flex-1 py-3 bg-emerald-600/20 border border-emerald-500/30 rounded-xl flex flex-col items-center gap-1 disabled:opacity-20 active:scale-95 transition-all"
               >
@@ -225,6 +226,7 @@ const App: React.FC = () => {
               
               <button 
                   onClick={toggleSelectionMode}
+                  data-testid="add-to-run-btn"
                   disabled={!isMyTurn || phase !== 'play' || selectedInHand.length === 0 || !currentPlayer.hasOpened}
                   className={`flex-1 py-3 ${isSelectingRun ? 'bg-emerald-500/40 border-emerald-400' : 'bg-emerald-600/20 border-emerald-500/30'} border rounded-xl flex flex-col items-center gap-1 disabled:opacity-20 active:scale-95 transition-all`}
               >
@@ -250,6 +252,7 @@ const App: React.FC = () => {
               
               <button 
                   onClick={() => discardCard(selectedInHand[0])}
+                  data-testid="discard-btn"
                   disabled={!isMyTurn || phase !== 'play' || selectedInHand.length !== 1 || !!mustPlayCard}
                   className="flex-1 py-3 bg-slate-600/20 border border-slate-500/30 rounded-xl flex flex-col items-center gap-1 disabled:opacity-20 active:scale-95 transition-all"
               >
@@ -259,12 +262,14 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <Hand 
-            cards={typeof players[0].hand === 'number' ? [] : players[0].hand} 
-            selectedIds={selectedInHand} 
-            onToggleCard={selectCardInHand} 
-            isDisabled={!isMyTurn}
-        />
+        <div data-testid="player-hand">
+            <Hand 
+                cards={typeof players[0].hand === 'number' ? [] : players[0].hand} 
+                selectedIds={selectedInHand} 
+                onToggleCard={selectCardInHand} 
+                isDisabled={!isMyTurn}
+            />
+        </div>
 
         <div className="h-10 flex items-center justify-center bg-black/60 border-t border-white/5">
            <p className="text-[10px] sm:text-xs font-black text-yellow-400 uppercase tracking-[0.15em] text-center px-4 leading-relaxed">
@@ -332,6 +337,26 @@ const App: React.FC = () => {
         cards={inspectedRun?.cards || null} 
         onClose={() => setInspectedRun(null)} 
       />
+
+      {winner && (
+        <div data-testid="winner-overlay" className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl p-8 animate-in fade-in duration-500">
+          <div className="w-24 h-24 mb-6 relative">
+            <i className={`fa-solid fa-trophy text-6xl ${winner === Team.A ? 'text-blue-400' : 'text-red-400'} animate-bounce`}></i>
+            <div className="absolute -inset-4 bg-white/10 rounded-full animate-ping -z-10"></div>
+          </div>
+          <h2 className={`text-4xl md:text-6xl font-black uppercase tracking-tighter mb-2 ${winner === Team.A ? 'text-blue-400' : 'text-red-400'}`}>
+            {winner === Team.A ? 'Team A Wins!' : 'Team B Wins!'}
+          </h2>
+          <p className="text-white/60 font-black uppercase tracking-widest text-sm mb-12">Total Domination</p>
+          
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="px-10 py-4 bg-white text-black font-black uppercase tracking-widest rounded-full hover:scale-110 active:scale-95 transition-all shadow-2xl"
+          >
+            Back to Lobby
+          </button>
+        </div>
+      )}
     </div>
   );
 };

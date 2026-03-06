@@ -6,7 +6,10 @@ export const SCENARIO_KEYS = {
   INITIAL: 'initial',
   MIDGAME: 'midgame',
   ENDGAME: 'endgame',
-  MANY_RUNS: 'many_runs'
+  MANY_RUNS: 'many_runs',
+  TESTING_RUNS: 'testing_runs',
+  DHAPPA: 'dhappa',
+  MERGE_RUNS: 'merge_runs'
 } as const;
 
 export type ScenarioKey = typeof SCENARIO_KEYS[keyof typeof SCENARIO_KEYS];
@@ -56,7 +59,8 @@ const getInitialScenario = (): GameState => {
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null, mustPlayCard: null
+    runCreationAmbiguity: null, mustPlayCard: null,
+    winner: null
   };
 };
 
@@ -108,6 +112,10 @@ const getMidGameScenario = (): GameState => {
 
   const players = createBasePlayers(4);
 
+  // Forced cards for P0 to test mechanics
+  const h8 = pluckCard(fullDeck, '8', Suit.Hearts);
+  const s3 = pluckCard(fullDeck, '3', Suit.Spades);
+
   // --- Team A (Players 0 & 2) ---
   // P0: 1 Complete Run, 1 Mid Run (6 cards)
   players[0].runs = [
@@ -146,6 +154,11 @@ const getMidGameScenario = (): GameState => {
   for (let i = 0; i < 4; i++) {
     players[i].hand = sortHand(deck.splice(0, 18));
   }
+
+  // Inject forced cards
+  if (h8) players[0].hand.push(h8);
+  if (s3) players[0].hand.push(s3);
+  players[0].hand = sortHand(players[0].hand);
   
   // Fill discard pile
   const discardPile = deck.splice(0, 15);
@@ -162,7 +175,8 @@ const getMidGameScenario = (): GameState => {
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null, mustPlayCard: null
+    runCreationAmbiguity: null, mustPlayCard: null,
+    winner: null
   };
 };
 
@@ -253,7 +267,7 @@ const getEndGameScenario = (): GameState => {
   const deck = seededShuffle(fullDeck);
 
   // Distribute hands (3-6 cards each)
-  players[0].hand = sortHand(deck.splice(0, 3)); // Close to winning
+  players[0].hand = sortHand([pluckCard(deck, '10', Suit.Spades)!]); // Exactly 1 card to win by discarding
   players[1].hand = sortHand(deck.splice(0, 4));
   players[2].hand = sortHand(deck.splice(0, 5));
   players[3].hand = sortHand(deck.splice(0, 6));
@@ -272,7 +286,8 @@ const getEndGameScenario = (): GameState => {
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null, mustPlayCard: null
+    runCreationAmbiguity: null, mustPlayCard: null,
+    winner: null
   };
 };
 
@@ -326,16 +341,154 @@ const getManyRunsScenario = (): GameState => {
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null, mustPlayCard: null
+    runCreationAmbiguity: null, mustPlayCard: null,
+    winner: null
   };
 };
 
-export const getScenario = (key: ScenarioKey): GameState => {
+const getTestingRunsScenario = (): GameState => {
+    const fullDeck = getDeck();
+    const players = createBasePlayers(4);
+
+    // Player 1 (Team A) - Pure Run + Joker
+    const p1PureRun = [
+        pluckCard(fullDeck, 'A', Suit.Hearts)!,
+        pluckCard(fullDeck, 'K', Suit.Hearts)!,
+        pluckCard(fullDeck, 'Q', Suit.Hearts)!
+    ];
+    const joker = fullDeck.find(c => c.value === 'Jo')!;
+    const joIdx = fullDeck.indexOf(joker);
+    fullDeck.splice(joIdx, 1);
+
+    players[0].hand = sortHand([
+        ...p1PureRun,
+        joker,
+        pluckCard(fullDeck, '10', Suit.Spades)!,
+        pluckCard(fullDeck, 'J', Suit.Spades)!,
+        pluckCard(fullDeck, 'Q', Suit.Spades)!,
+        ...fullDeck.splice(0, 10)
+    ]);
+
+    // Player 3 (Team A) - Teammate who needs to add to P1's run
+    players[2].hand = sortHand([
+        pluckCard(fullDeck, 'J', Suit.Hearts)!,
+        pluckCard(fullDeck, '10', Suit.Hearts)!,
+        ...fullDeck.splice(0, 15)
+    ]);
+
+    // Players 2 & 4 (Team B)
+    players[1].hand = sortHand(fullDeck.splice(0, 20));
+    players[3].hand = sortHand(fullDeck.splice(0, 20));
+
+    const discardPile = [fullDeck.pop()!];
+
+    return {
+        players,
+        currentPlayerIndex: 0,
+        drawPile: fullDeck,
+        discardPile,
+        phase: 'play',
+        selectedInHand: [],
+        nPickPreview: null,
+        lastDrawnCard: null,
+        isNPickActive: false,
+        isConfirmingDraw: false,
+        isSelectingRun: false,
+        runCreationAmbiguity: null, mustPlayCard: null,
+        winner: null
+    };
+};
+
+const getDhappaScenario = (): GameState => {
+    const fullDeck = getDeck();
+    const players = createBasePlayers(4);
+    
+    // Player 1 has a '2'
+    players[0].hand = sortHand([
+        pluckCard(fullDeck, '2', Suit.Hearts)!,
+        ...fullDeck.splice(0, 26)
+    ]);
+    
+    // Fill discard pile
+    const discardPile = fullDeck.splice(0, 10);
+    
+    return {
+        players,
+        currentPlayerIndex: 0,
+        drawPile: fullDeck,
+        discardPile,
+        phase: 'play',
+        selectedInHand: [],
+        nPickPreview: null,
+        lastDrawnCard: null,
+        isNPickActive: false,
+        isConfirmingDraw: false,
+        isSelectingRun: false,
+        runCreationAmbiguity: null, mustPlayCard: null,
+        winner: null
+    };
+};
+
+const getMergeRunsScenario = (): GameState => {
+    const fullDeck = getDeck();
+    const players = createBasePlayers(4);
+    
+    // Player 1 has two runs that can be merged by an 8 of Hearts or a wild
+    // Run 1: 5, 6, 7 of Hearts
+    // Run 2: 9, 10, J of Hearts
+    // Gap: 8 of Hearts
+    
+    const h5 = pluckCard(fullDeck, '5', Suit.Hearts)!;
+    const h6 = pluckCard(fullDeck, '6', Suit.Hearts)!;
+    const h7 = pluckCard(fullDeck, '7', Suit.Hearts)!;
+    const h9 = pluckCard(fullDeck, '9', Suit.Hearts)!;
+    const h10 = pluckCard(fullDeck, '10', Suit.Hearts)!;
+    const hJ = pluckCard(fullDeck, 'J', Suit.Hearts)!;
+    
+    players[0].runs = [
+        createRun([h5, h6, h7], true),
+        createRun([h9, h10, hJ], true)
+    ];
+    players[0].hasOpened = true;
+    
+    // P1 hand has 8 of Hearts and a Joker
+    const h8 = pluckCard(fullDeck, '8', Suit.Hearts)!;
+    const joker = fullDeck.find(c => c.value === 'Jo')!;
+    const joIdx = fullDeck.indexOf(joker);
+    fullDeck.splice(joIdx, 1);
+    
+    players[0].hand = sortHand([
+        h8,
+        joker,
+        ...fullDeck.splice(0, 10)
+    ]);
+    
+    return {
+        players,
+        currentPlayerIndex: 0,
+        drawPile: fullDeck,
+        discardPile: [fullDeck.pop()!],
+        phase: 'play',
+        selectedInHand: [],
+        nPickPreview: null,
+        lastDrawnCard: null,
+        isNPickActive: false,
+        isConfirmingDraw: false,
+        isSelectingRun: false,
+        runCreationAmbiguity: null, mustPlayCard: null,
+        winner: null
+    };
+};
+
+export const getScenario = (key: string): GameState => {
   switch (key) {
     case SCENARIO_KEYS.INITIAL: return getInitialScenario();
     case SCENARIO_KEYS.MIDGAME: return getMidGameScenario();
     case SCENARIO_KEYS.ENDGAME: return getEndGameScenario();
     case SCENARIO_KEYS.MANY_RUNS: return getManyRunsScenario();
+    case SCENARIO_KEYS.TESTING_RUNS: return getTestingRunsScenario();
+    case SCENARIO_KEYS.DHAPPA: return getDhappaScenario();
+    case SCENARIO_KEYS.MERGE_RUNS: return getMergeRunsScenario();
     default: return getInitialScenario();
   }
 };

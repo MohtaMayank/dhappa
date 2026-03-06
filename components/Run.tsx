@@ -4,6 +4,7 @@ import { CardDef } from '../shared/types';
 import CardBase from './CardBase';
 
 interface RunProps {
+  id?: string;
   data: CardDef[];
   label?: string;
   className?: string;
@@ -11,7 +12,7 @@ interface RunProps {
   onClick?: () => void;
 }
 
-const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onClick }) => {
+const Run: React.FC<RunProps> = ({ id, data, label, className = '', onInspect, onClick }) => {
   // We want to display runs in Descending order (High to Low, e.g. K, Q, J)
   // The store maintains Ascending order (J, Q, K).
   // So we reverse the data for display purposes.
@@ -86,6 +87,7 @@ const Run: React.FC<RunProps> = ({ data, label, className = '', onInspect, onCli
     <div 
       className={`flex flex-col shrink-0 cursor-pointer group select-none transition-transform active:scale-[0.98] ${className}`}
       onClick={onClick}
+      data-testid={id ? `run-${id}` : 'run'}
     >
       
       <div className="flex items-center relative py-1 h-16 sm:h-20">

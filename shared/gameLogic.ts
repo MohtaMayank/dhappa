@@ -407,6 +407,46 @@ export function applyRepresentations(cards: CardDef[]): CardDef[] {
   });
 }
 
+export function canGoOut(player: Player, teamPlayers: Player[]): boolean {
+  // 1. Hand must have exactly 1 card (the final discard)
+  if (player.hand.length !== 1) return false;
+
+  // 2. The 3-Run Lock check
+  // Collect all runs for the team
+  const allTeamRuns = teamPlayers.flatMap(p => p.runs);
+  
+  // We need to find 3 runs that satisfy the condition:
+  // - Max 2 wilds per run
+  // - Max 4 wilds total across all 3 runs
+  
+  const eligibleRuns = allTeamRuns.filter(run => {
+      const wildCount = run.cards.filter(c => c.isWild).length;
+      return wildCount <= 2;
+  });
+
+  if (eligibleRuns.length < 3) return false;
+
+  // Find if there's any combination of 3 eligible runs where total wilds <= 4
+  // If there are many runs, we might need to be smart, but usually there aren't that many.
+  for (let i = 0; i < eligibleRuns.length; i++) {
+    for (let j = i + 1; j < eligibleRuns.length; j++) {
+      for (let k = j + 1; k < eligibleRuns.length; k++) {
+        const r1 = eligibleRuns[i];
+        const r2 = eligibleRuns[j];
+        const r3 = eligibleRuns[k];
+        
+        const w1 = r1.cards.filter(c => c.isWild).length;
+        const w2 = r2.cards.filter(c => c.isWild).length;
+        const w3 = r3.cards.filter(c => c.isWild).length;
+        
+        if ((w1 + w2 + w3) <= 4) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export function isValidNPick(n: number, discardPile: CardDef[], players: Player[], currentPlayerIndex: number, isFirstTurn: boolean): boolean {
   if (n <= 0 || n > discardPile.length) return false;
 

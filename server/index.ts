@@ -5,56 +5,104 @@ import cors from 'cors';
 import type { GameState, Player, Run, CardDef } from '../shared/types';
 import { Team } from '../shared/types';
 import { createDeck, generateId, sortHand } from '../shared/constants';
-import { arrangeRun, validateAddToRun, inferRunContext, isValidNPick, applyRepresentations } from '../shared/gameLogic';
+import { arrangeRun, validateAddToRun, inferRunContext, isValidNPick, applyRepresentations, canGoOut } from '../shared/gameLogic';
 import { createClient } from 'redis';
 import { getScenario } from '../scenarios';
-
-const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
-
-interface PlayerAuth {
-  name: string;
-  passcode: string;
-  token: string;
-}
-
-interface RoomContainer {
-  state: GameState;
-  auth: Record<number, PlayerAuth>;
-}
-
 import { randomUUID } from 'crypto';
-
-const roomAssignments: Record<string, Record<string, number>> = {};
-
-redisClient.on('error', (err) => console.log('Redis Client Error', err));
-redisClient.connect();
 
 const app = express();
 app.use(cors());
 
-// Redis repository functions
-async function saveRoom(roomId: string, container: RoomContainer) {
-  await redisClient.set(`room:${roomId}`, JSON.stringify(container), {
-    EX: 86400 // 24 hours TTL
-  });
-}
-
-async function loadRoom(roomId: string): Promise<RoomContainer | null> {
-  const data = await redisClient.get(`room:${roomId}`);
-  return data ? JSON.parse(data.toString()) : null;
-}
-
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+  cors: { origin: '*' }
 });
 
 const PORT = process.env.PORT || 8081;
+
+// Health check routes
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.get('/', (req, res) => {
+  res.status(200).send('Server is up');
+});
+
+// 1. Define a global flag or a wrapper for your data store
+let isRedisConnected = false;
+
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
+  socket: {
+    connectTimeout: 2000, // Reduced for faster E2E startup
+    reconnectStrategy: (retries) => (retries > 2 ? new Error('Max retries') : 500),
+  }
+});
+
+redisClient.on('error', (err) => {
+  console.log('Redis Client Error:', err.message);
+  isRedisConnected = false;
+});
+
+// 2. Start the HTTP server IMMEDIATELY
+// This ensures Playwright sees the port open and doesn't hang.
+httpServer.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`🚀 Server listening on http://0.0.0.0:${PORT}`);
+  
+  // 3. Attempt Redis connection in the background AFTER the server is up
+  connectRedis();
+});
+
+async function connectRedis() {
+  try {
+    await redisClient.connect();
+    isRedisConnected = true;
+    console.log('✅ Connected to Redis');
+  } catch (e) {
+    console.log('⚠️ Redis failed. Using In-Memory fallback.');
+    isRedisConnected = false;
+  }
+}
+
+interface RoomContainer {
+  state: GameState;
+  auth: Record<number, { name: string; passcode: string; token: string }>;
+}
+
+const memoryStore: Record<string, RoomContainer> = {};
+const roomAssignments: Record<string, Record<string, number>> = {};
+
+async function saveRoom(roomId: string, container: RoomContainer) {
+    if (isRedisConnected && redisClient.isOpen) {
+        try {
+            await Promise.race([
+                redisClient.set(`room:${roomId}`, JSON.stringify(container)),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Redis Timeout')), 500))
+            ]);
+        } catch (e) {
+            console.error("Redis Set failed, falling back to memory:", e);
+            memoryStore[roomId] = container;
+        }
+    } else {
+        memoryStore[roomId] = container;
+    }
+}
+
+async function loadRoom(roomId: string): Promise<RoomContainer | null> {
+    if (isRedisConnected && redisClient.isOpen) {
+        try {
+            const data = await Promise.race([
+                redisClient.get(`room:${roomId}`),
+                new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Redis Timeout')), 500))
+            ]) as string | null;
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            console.error("Redis Get failed, falling back to memory:", e);
+        }
+    }
+    return memoryStore[roomId] || null;
+}
 
 function initGameState(playerCount: number = 4): GameState {
   const deck = createDeck();
@@ -84,7 +132,8 @@ function initGameState(playerCount: number = 4): GameState {
     isNPickActive: false,
     isConfirmingDraw: false,
     isSelectingRun: false,
-    runCreationAmbiguity: null
+    runCreationAmbiguity: null,
+    winner: null
   };
 }
 
@@ -296,9 +345,14 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       const cardIndex = player.hand.findIndex((c: CardDef) => c.id === cardId);
       if (cardIndex === -1) throw new Error('Card not in hand');
 
+      const teamPlayers = state.players.filter(p => p.team === player.team);
+      const isWinner = canGoOut(player, teamPlayers);
+
       const newHand = [...player.hand];
       const [discardedCard] = newHand.splice(cardIndex, 1);
       if (!discardedCard) throw new Error('Failed to discard');
+
+      const isDhappa = discardedCard.value === '2';
 
       const newPlayers = [...state.players];
       newPlayers[state.currentPlayerIndex] = {
@@ -309,9 +363,10 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       return {
         ...state,
         players: newPlayers,
-        discardPile: [...state.discardPile, discardedCard],
-        currentPlayerIndex: (state.currentPlayerIndex + 1) % state.players.length,
-        phase: 'draw',
+        discardPile: isDhappa ? [] : [...state.discardPile, discardedCard],
+        currentPlayerIndex: isWinner ? state.currentPlayerIndex : (state.currentPlayerIndex + 1) % state.players.length,
+        phase: isWinner ? 'play' : 'draw',
+        winner: isWinner ? player.team : null
       };
     }
 
@@ -378,20 +433,31 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       const validation = validateAddToRun(cards, targetRun);
       if (validation.type === 'INVALID') throw new Error('Invalid move to run');
 
-      const preferHead = payload.options?.preferHead || false;
-      console.log(`[DEBUG] ADD_TO_RUN: preferHead=${preferHead}, cardsToAdd=${cards.length}, targetRunSize=${targetRun.cards.length}`);
-      
-      const arranged = arrangeRun([...targetRun.cards, ...cards], preferHead);
-      console.log(`[DEBUG] Arranged:`, arranged.map(c => `${c.value}${c.suit[0]}${c.represents ? `(as ${c.represents.value}${c.represents.suit[0]})` : ''}`));
-      
-      const withRepresentations = applyRepresentations(arranged);
-      console.log(`[DEBUG] Final:`, withRepresentations.map(c => `${c.value}${c.suit[0]}${c.represents ? `(as ${c.represents.value}${c.represents.suit[0]})` : ''}`));
-      
+      const newPlayers = [...state.players];
+      let newHand = player.hand.filter((c: CardDef) => !cards.find((rc: any) => rc.id === c.id));
+      let updatedRunCards = [...targetRun.cards];
+
+      if (validation.type === 'REPLACE_FLYING') {
+          const cardToReturn = validation.cardToReturn;
+          newHand = sortHand([...newHand, cardToReturn]);
+          // Remove the wildcard and replace with the natural card
+          const wildIdx = updatedRunCards.findIndex(c => c.id === cardToReturn.id);
+          updatedRunCards[wildIdx] = cards[0]; // cards[0] is the natural card
+      } else if (validation.type === 'REPLACE_STATIC') {
+          // Shifting logic (Static wild stays on table)
+          const preferHead = payload.options?.preferHead || false;
+          updatedRunCards = arrangeRun([...targetRun.cards, ...cards], preferHead);
+      } else {
+          // EXTEND
+          const preferHead = payload.options?.preferHead || false;
+          updatedRunCards = arrangeRun([...targetRun.cards, ...cards], preferHead);
+      }
+
+      const withRepresentations = applyRepresentations(updatedRunCards);
       const context = inferRunContext(withRepresentations);
       if (!context) throw new Error('Final run is invalid');
       const isPure = withRepresentations.every((c: CardDef) => !c.isWild);
 
-      const newHand = player.hand.filter((c: CardDef) => !cards.find((rc: any) => rc.id === c.id));
       const updatedRun: Run = {
         ...targetRun,
         cards: withRepresentations,
@@ -399,7 +465,6 @@ function processGameAction(state: GameState, action: { type: string; payload: an
         isSet: context.type === 'SET'
       };
 
-      const newPlayers = [...state.players];
       newPlayers[state.currentPlayerIndex] = {
         ...newPlayers[state.currentPlayerIndex]!,
         hand: sortHand(newHand),
@@ -430,7 +495,3 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       return state;
   }
 }
-
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});

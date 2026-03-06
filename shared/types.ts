@@ -61,4 +61,5 @@ export interface GameState {
   isSelectingRun: boolean;
   mustPlayCard: string | null;
   runCreationAmbiguity: { isOpen: boolean; cards: CardDef[]; headRank?: number; tailRank?: number } | null;
+  winner: Team | null;
 }

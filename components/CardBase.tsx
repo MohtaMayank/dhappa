@@ -75,6 +75,7 @@ const CardBase: React.FC<CardBaseProps> = ({
   return (
     <div 
       onClick={onClick}
+      data-testid={`card-${card.suit}-${card.value}${card.isWild ? '-wild' : ''}`}
       className={`relative ${sizeClass} rounded-md border-[1.5px] ${bgClass} ${selectionClass} ${className} transition-all duration-200 cursor-pointer overflow-hidden flex flex-col`}
     >
       {/* Corner Value/Suit */}

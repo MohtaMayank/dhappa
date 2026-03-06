@@ -21,6 +21,7 @@ const App: React.FC = () => {
     startRunCreation, addToRun, lastDrawnCard, closeDrawOverlay, godMode,
     isConfirmingDraw, confirmDraw,
     isSelectingRun, setSelectingRun,
+    isMergingRuns, mergeAnchorId,
     addToRunAmbiguity, resolveAddToRunAmbiguity, cancelAddToRunAmbiguity,
     runCreationAmbiguity, resolveCreateRunAmbiguity, cancelRunCreation,
     cancelDraw, mustPlayCard, winner
@@ -273,11 +274,14 @@ const App: React.FC = () => {
 
         <div className="h-10 flex items-center justify-center bg-black/60 border-t border-white/5">
            <p className="text-[10px] sm:text-xs font-black text-yellow-400 uppercase tracking-[0.15em] text-center px-4 leading-relaxed">
-               {isSelectingRun 
-                    ? "Select a valid run (yours or teammate's) to add cards..." 
-                    : (mustPlayCard 
-                        ? `Add ${getMustPlayCardName()} to a new or existing run`
-                        : (isMyTurn ? (phase === 'draw' ? 'Draw a card' : 'Play cards or Discard') : `Waiting for ${players[currentPlayerIndex].name}`)
+               {isMergingRuns
+                    ? (mergeAnchorId ? "Select second run to merge..." : "Select first run to merge...")
+                    : (isSelectingRun 
+                        ? "Select a valid run (yours or teammate's) to add cards..." 
+                        : (mustPlayCard 
+                            ? `Add ${getMustPlayCardName()} to a new or existing run`
+                            : (isMyTurn ? (phase === 'draw' ? 'Draw a card' : 'Play cards or Discard') : `Waiting for ${players[currentPlayerIndex].name}`)
+                          )
                       )
                }
            </p>

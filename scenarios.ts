@@ -9,7 +9,8 @@ export const SCENARIO_KEYS = {
   MANY_RUNS: 'many_runs',
   TESTING_RUNS: 'testing_runs',
   DHAPPA: 'dhappa',
-  MERGE_RUNS: 'merge_runs'
+  MERGE_RUNS: 'merge_runs',
+  MERGE_CHOICE: 'merge_choice'
 } as const;
 
 export type ScenarioKey = typeof SCENARIO_KEYS[keyof typeof SCENARIO_KEYS];
@@ -480,6 +481,51 @@ const getMergeRunsScenario = (): GameState => {
     };
 };
 
+const getMergeChoiceScenario = (): GameState => {
+    const fullDeck = getDeck();
+    const players = createBasePlayers(4);
+    
+    // Player 1 has three runs that can be merged
+    // Run 1: 4, 5, 6 of Hearts
+    // Run 2: 7, 8, 9 of Hearts
+    // Run 3: 10, J, Q of Hearts
+    
+    const h4 = pluckCard(fullDeck, '4', Suit.Hearts)!;
+    const h5 = pluckCard(fullDeck, '5', Suit.Hearts)!;
+    const h6 = pluckCard(fullDeck, '6', Suit.Hearts)!;
+    const h7 = pluckCard(fullDeck, '7', Suit.Hearts)!;
+    const h8 = pluckCard(fullDeck, '8', Suit.Hearts)!;
+    const h9 = pluckCard(fullDeck, '9', Suit.Hearts)!;
+    const h10 = pluckCard(fullDeck, '10', Suit.Hearts)!;
+    const hJ = pluckCard(fullDeck, 'J', Suit.Hearts)!;
+    const hQ = pluckCard(fullDeck, 'Q', Suit.Hearts)!;
+    
+    players[0].runs = [
+        createRun([h4, h5, h6], true),
+        createRun([h7, h8, h9], true),
+        createRun([h10, hJ, hQ], true)
+    ];
+    players[0].hasOpened = true;
+    
+    players[0].hand = sortHand(fullDeck.splice(0, 10));
+    
+    return {
+        players,
+        currentPlayerIndex: 0,
+        drawPile: fullDeck,
+        discardPile: [fullDeck.pop()!],
+        phase: 'play',
+        selectedInHand: [],
+        nPickPreview: null,
+        lastDrawnCard: null,
+        isNPickActive: false,
+        isConfirmingDraw: false,
+        isSelectingRun: false,
+        runCreationAmbiguity: null, mustPlayCard: null,
+        winner: null
+    };
+};
+
 export const getScenario = (key: string): GameState => {
   switch (key) {
     case SCENARIO_KEYS.INITIAL: return getInitialScenario();
@@ -489,6 +535,7 @@ export const getScenario = (key: string): GameState => {
     case SCENARIO_KEYS.TESTING_RUNS: return getTestingRunsScenario();
     case SCENARIO_KEYS.DHAPPA: return getDhappaScenario();
     case SCENARIO_KEYS.MERGE_RUNS: return getMergeRunsScenario();
+    case SCENARIO_KEYS.MERGE_CHOICE: return getMergeChoiceScenario();
     default: return getInitialScenario();
   }
 };

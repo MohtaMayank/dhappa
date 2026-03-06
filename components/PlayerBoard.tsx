@@ -1,7 +1,8 @@
 import React from 'react';
 import { Player, Run as RunType, Suit, CardDef } from '../shared/types';
 import { SUIT_COLORS, SUIT_SYMBOLS } from '../shared/constants';
-import { getRank } from '../shared/gameLogic';
+import { getRank, findMergeablePairs, canMergeSequences } from '../shared/gameLogic';
+import { useGameStore } from '../store';
 import Run from './Run';
 
 interface PlayerBoardProps {
@@ -17,6 +18,15 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
   isSelectingMode,
   getRunValidity
 }) => {
+  const { 
+    isMergingRuns, 
+    mergeAnchorId, 
+    setMergingRuns, 
+    selectRunForMerge, 
+    currentPlayerIndex,
+    phase 
+  } = useGameStore();
+
   const suitOrder = [Suit.Hearts, Suit.Spades, Suit.Clubs, Suit.Diamonds];
 
   // Helper to get value of run for sorting
@@ -36,6 +46,9 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
         const hasRuns = player.runs.length > 0;
         const hasName = player.name && player.name.trim() !== '';
 
+        const isLocalPlayer = player.id === players[0].id;
+        const canShowMerge = isLocalPlayer && phase === 'play' && findMergeablePairs(player.runs).length > 0;
+
         return (
           <div key={player.id} className="flex flex-col gap-4 md:gap-1 animate-in fade-in slide-in-from-left-4 duration-500 rounded-xl p-1">
             <header className="flex items-center justify-between border-l-4 border-emerald-500 bg-white/5 pl-3 py-1.5 rounded-r-lg shadow-sm">
@@ -52,6 +65,15 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                     </span>
                 </div>
               </div>
+
+              {canShowMerge && (
+                  <button 
+                    onClick={() => setMergingRuns(!isMergingRuns)}
+                    className={`mr-2 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${isMergingRuns ? 'bg-orange-500 text-white shadow-lg animate-pulse' : 'bg-white/10 text-white/60 hover:bg-white/20'}`}
+                  >
+                    {isMergingRuns ? 'Cancel Merge' : 'Merge Runs'}
+                  </button>
+              )}
             </header>
 
             {!hasRuns ? (
@@ -77,16 +99,34 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                         <div className="flex flex-wrap gap-4">
                             {suitRuns.map((run) => {
                             const isValid = isSelectingMode && getRunValidity ? getRunValidity(run) : true;
-                            const opacityClass = isSelectingMode 
-                                ? (isValid ? 'ring-2 ring-emerald-400 animate-pulse cursor-pointer' : 'opacity-20 grayscale pointer-events-none') 
-                                : 'hover:scale-105 transition-transform';
+                            
+                            let mergeClass = '';
+                            let clickHandler = () => onRunClick?.(run);
+
+                            if (isMergingRuns && isLocalPlayer) {
+                                const isAnchor = mergeAnchorId === run.id;
+                                const anchorRun = player.runs.find(r => r.id === mergeAnchorId);
+                                const isMergeable = !mergeAnchorId || isAnchor || (anchorRun && canMergeSequences(anchorRun, run));
+                                
+                                if (isAnchor) mergeClass = 'ring-4 ring-orange-500 scale-105 z-10 shadow-2xl';
+                                else if (isMergeable) mergeClass = 'ring-2 ring-emerald-400 animate-pulse cursor-pointer';
+                                else mergeClass = 'opacity-20 grayscale pointer-events-none';
+
+                                clickHandler = () => selectRunForMerge(run.id);
+                            }
+
+                            const opacityClass = isMergingRuns 
+                                ? mergeClass
+                                : (isSelectingMode 
+                                    ? (isValid ? 'ring-2 ring-emerald-400 animate-pulse cursor-pointer' : 'opacity-20 grayscale pointer-events-none') 
+                                    : 'hover:scale-105 transition-transform');
 
                             return (
                                 <Run 
                                 key={run.id} 
                                 id={run.id}
                                 data={run.cards} 
-                                onClick={() => onRunClick?.(run)}
+                                onClick={clickHandler}
                                 className={opacityClass}
                                 />
                             );
@@ -103,16 +143,34 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                         .sort((a, b) => getRunValue(b) - getRunValue(a))
                         .map((run) => {
                             const isValid = isSelectingMode && getRunValidity ? getRunValidity(run) : true;
-                            const opacityClass = isSelectingMode 
-                                ? (isValid ? 'ring-2 ring-emerald-400 animate-pulse cursor-pointer' : 'opacity-20 grayscale pointer-events-none') 
-                                : 'hover:scale-105 transition-transform';
+                            
+                            let mergeClass = '';
+                            let clickHandler = () => onRunClick?.(run);
+
+                            if (isMergingRuns && isLocalPlayer) {
+                                const isAnchor = mergeAnchorId === run.id;
+                                const anchorRun = player.runs.find(r => r.id === mergeAnchorId);
+                                const isMergeable = !mergeAnchorId || isAnchor || (anchorRun && canMergeSequences(anchorRun, run));
+                                
+                                if (isAnchor) mergeClass = 'ring-4 ring-orange-500 scale-105 z-10 shadow-2xl';
+                                else if (isMergeable) mergeClass = 'ring-2 ring-emerald-400 animate-pulse cursor-pointer';
+                                else mergeClass = 'opacity-20 grayscale pointer-events-none';
+
+                                clickHandler = () => selectRunForMerge(run.id);
+                            }
+
+                            const opacityClass = isMergingRuns 
+                                ? mergeClass
+                                : (isSelectingMode 
+                                    ? (isValid ? 'ring-2 ring-emerald-400 animate-pulse cursor-pointer' : 'opacity-20 grayscale pointer-events-none') 
+                                    : 'hover:scale-105 transition-transform');
 
                             return (
                                 <Run 
                                 key={run.id} 
                                 id={run.id}
                                 data={run.cards} 
-                                onClick={() => onRunClick?.(run)}
+                                onClick={clickHandler}
                                 className={opacityClass}
                                 />
                             );

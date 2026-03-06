@@ -193,4 +193,41 @@ test.describe('Run Construction & Manipulation', () => {
     await expect(mergedRun.locator('text=8')).toBeVisible();
     await expect(mergedRun.locator('text=J')).toBeVisible();
   });
+
+  test('Merge Runs (Direct Action): P1 merges two adjacent runs using the Merge button', async ({ context }) => {
+    const p1Page = await context.newPage();
+    const roomId = await createRoom(p1Page, 'Player 1', '1234');
+    
+    await injectScenario(roomId, 'merge_choice');
+    
+    // In merge_choice, P1 has:
+    // Run 0: 4,5,6 Hearts
+    // Run 1: 7,8,9 Hearts
+    // Run 2: 10,J,Q Hearts
+    
+    await expect(p1Page.locator('[data-testid^="run-"]')).toHaveCount(3);
+
+    // Click Merge Runs button in header
+    await p1Page.click('button:has-text("Merge Runs")');
+    
+    // Verify prompt
+    await expect(p1Page.locator('text=Select first run to merge...')).toBeVisible();
+
+    // Select first run (4,5,6)
+    await p1Page.locator('[data-testid^="run-"]').nth(0).click();
+
+    // Verify prompt updates
+    await expect(p1Page.locator('text=Select second run to merge...')).toBeVisible();
+
+    // Select second run (7,8,9)
+    await p1Page.locator('[data-testid^="run-"]').nth(1).click();
+    
+    // Verify runs are merged (Count should be 2 now)
+    await expect(p1Page.locator('[data-testid^="run-"]')).toHaveCount(2);
+    
+    // The merged run should be 4-9
+    const mergedRun = p1Page.locator('[data-testid^="run-"]').first();
+    await expect(mergedRun.locator('text=4')).toBeVisible();
+    await expect(mergedRun.locator('text=9')).toBeVisible();
+  });
 });

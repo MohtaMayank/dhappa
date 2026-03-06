@@ -447,6 +447,45 @@ export function canGoOut(player: Player, teamPlayers: Player[]): boolean {
   return false;
 }
 
+export function canMergeSequences(runA: Run, runB: Run): boolean {
+  const contextA = inferRunContext(runA.cards);
+  const contextB = inferRunContext(runB.cards);
+
+  if (!contextA || !contextB) return false;
+  if (contextA.type !== 'SEQUENCE' || contextB.type !== 'SEQUENCE') return false;
+  if (contextA.suit !== contextB.suit) return false;
+
+  // Combine and check if they form a single valid sequence
+  // We try both orders (A+B and B+A)
+  const combinedAB = [...runA.cards, ...runB.cards];
+  const contextAB = inferRunContext(arrangeRun(combinedAB));
+  if (contextAB && contextAB.type === 'SEQUENCE' && contextAB.cards.length === combinedAB.length) return true;
+
+  const combinedBA = [...runB.cards, ...runA.cards];
+  const contextBA = inferRunContext(arrangeRun(combinedBA));
+  if (contextBA && contextBA.type === 'SEQUENCE' && contextBA.cards.length === combinedBA.length) return true;
+
+  return false;
+}
+
+export function mergeSequences(runA: Run, runB: Run): CardDef[] {
+  const combined = [...runA.cards, ...runB.cards];
+  const arranged = arrangeRun(combined);
+  return applyRepresentations(arranged);
+}
+
+export function findMergeablePairs(runs: Run[]): [string, string][] {
+  const pairs: [string, string][] = [];
+  for (let i = 0; i < runs.length; i++) {
+    for (let j = i + 1; j < runs.length; j++) {
+      if (canMergeSequences(runs[i], runs[j])) {
+        pairs.push([runs[i].id, runs[j].id]);
+      }
+    }
+  }
+  return pairs;
+}
+
 export function isValidNPick(n: number, discardPile: CardDef[], players: Player[], currentPlayerIndex: number, isFirstTurn: boolean): boolean {
   if (n <= 0 || n > discardPile.length) return false;
 

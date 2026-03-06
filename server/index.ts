@@ -5,7 +5,7 @@ import cors from 'cors';
 import type { GameState, Player, Run, CardDef } from '../shared/types';
 import { Team } from '../shared/types';
 import { createDeck, generateId, sortHand } from '../shared/constants';
-import { arrangeRun, validateAddToRun, inferRunContext, isValidNPick, applyRepresentations, canGoOut } from '../shared/gameLogic';
+import { arrangeRun, validateAddToRun, inferRunContext, isValidNPick, applyRepresentations, canGoOut, canMergeSequences, mergeSequences } from '../shared/gameLogic';
 import { createClient } from 'redis';
 import { getScenario } from '../scenarios';
 import { randomUUID } from 'crypto';
@@ -488,6 +488,39 @@ function processGameAction(state: GameState, action: { type: string; payload: an
         ...state,
         players: newPlayers,
         mustPlayCard: nextMustPlayCard
+      };
+    }
+
+    case 'MERGE_RUNS': {
+      if (state.phase !== 'play') throw new Error('Cannot merge runs in this phase');
+      const { runIdA, runIdB } = payload;
+
+      const runA = player.runs.find(r => r.id === runIdA);
+      const runB = player.runs.find(r => r.id === runIdB);
+
+      if (!runA || !runB) throw new Error('Both runs must belong to the current player to merge');
+      if (!canMergeSequences(runA, runB)) throw new Error('These runs cannot be merged');
+
+      const mergedCards = mergeSequences(runA, runB);
+      const context = inferRunContext(mergedCards);
+      if (!context) throw new Error('Merged run is invalid');
+
+      const newRun: Run = {
+        id: runIdA, // Keep the first ID as anchor
+        cards: mergedCards,
+        isPure: mergedCards.every(c => !c.isWild),
+        isSet: context.type === 'SET'
+      };
+
+      const newPlayers = [...state.players];
+      newPlayers[state.currentPlayerIndex] = {
+        ...player,
+        runs: player.runs.filter(r => r.id !== runIdA && r.id !== runIdB).concat(newRun)
+      };
+
+      return {
+        ...state,
+        players: newPlayers
       };
     }
     

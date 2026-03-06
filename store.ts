@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { GameState, Player, CardDef, Run, Team, GamePhase, Suit, WildType } from './shared/types';
 import { createDeck, generateId, sortHand } from './shared/constants';
 import { ScenarioKey, getScenario } from './scenarios';
-import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER, applyRepresentations, inferRunContext } from './shared/gameLogic';
+import { validateAddToRun, AddToRunResult, arrangeRun, checkRunAmbiguity, RANK_ORDER, applyRepresentations, inferRunContext, canMergeSequences } from './shared/gameLogic';
 import { io, Socket } from 'socket.io-client';
 
 const serverUrl = import.meta.env.VITE_SERVER_URL || `http://${window.location.hostname}:8081`;
@@ -13,6 +13,8 @@ interface GameStore extends GameState {
   // Client-only state
   godMode: boolean;
   isSelectingRun: boolean;
+  isMergingRuns: boolean;
+  mergeAnchorId: string | null;
   addToRunAmbiguity: { 
     isOpen: boolean; 
     runId: string; 
@@ -44,6 +46,8 @@ interface GameStore extends GameState {
   resolveAddToRunAmbiguity: (direction: 'HEAD' | 'TAIL') => void;
   cancelAddToRunAmbiguity: () => void;
   setSelectingRun: (isSelecting: boolean) => void;
+  setMergingRuns: (isMerging: boolean) => void;
+  selectRunForMerge: (runId: string) => void;
   toggleNPick: (n: number | null) => void;
   toggleGodMode: () => void;
   loadScenario: (key: string) => void;
@@ -53,9 +57,19 @@ export const useGameStore = create<GameStore>((set, get) => {
   // Socket listeners
   socket.on('state_update', (newState: GameState) => {
     const currentState = get();
-    // Auto-select mustPlayCard if it just appeared
-    if (newState.mustPlayCard && !currentState.mustPlayCard) {
-      set({ ...newState, selectedInHand: [newState.mustPlayCard] });
+    
+    // Clear merge/selection state if turn changed or phase changed away from play
+    const turnChanged = newState.currentPlayerIndex !== currentState.currentPlayerIndex;
+    const phaseChanged = newState.phase !== currentState.phase;
+    
+    if (turnChanged || phaseChanged) {
+      set({ 
+        ...newState, 
+        selectedInHand: newState.mustPlayCard ? [newState.mustPlayCard] : [],
+        isSelectingRun: false,
+        isMergingRuns: false,
+        mergeAnchorId: null
+      });
     } else {
       set({ ...newState });
     }
@@ -87,6 +101,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Client State
     godMode: false,
     isSelectingRun: false,
+    isMergingRuns: false,
+    mergeAnchorId: null,
     addToRunAmbiguity: null,
     runCreationAmbiguity: null,
     selectedInHand: [],
@@ -233,6 +249,31 @@ export const useGameStore = create<GameStore>((set, get) => {
     cancelAddToRunAmbiguity: () => set({ addToRunAmbiguity: null }),
 
     setSelectingRun: (isSelecting) => set({ isSelectingRun: isSelecting }),
+
+    setMergingRuns: (isMerging) => set({ isMergingRuns: isMerging, mergeAnchorId: null }),
+
+    selectRunForMerge: (runId) => {
+      const { mergeAnchorId, players, currentPlayerIndex } = get();
+      const player = players[currentPlayerIndex];
+      if (!player) return;
+
+      if (!mergeAnchorId) {
+        // First selection
+        set({ mergeAnchorId: runId });
+      } else {
+        // Second selection - Execute Merge
+        if (mergeAnchorId === runId) {
+            set({ mergeAnchorId: null });
+            return;
+        }
+
+        socket.emit('game_action', (window as any).ROOM_ID, {
+          type: 'MERGE_RUNS',
+          payload: { runIdA: mergeAnchorId, runIdB: runId }
+        });
+        set({ isMergingRuns: false, mergeAnchorId: null });
+      }
+    },
 
     toggleNPick: (n) => {
       set({ isNPickActive: !!n, nPickPreview: n });

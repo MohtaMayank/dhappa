@@ -446,7 +446,16 @@ function processGameAction(state: GameState, action: { type: string; payload: an
       } else if (validation.type === 'REPLACE_STATIC') {
           // Shifting logic (Static wild stays on table)
           const preferHead = payload.options?.preferHead || false;
-          updatedRunCards = arrangeRun([...targetRun.cards, ...cards], preferHead);
+          // IMPORTANT: Clear the 'represents' property of the displaced wildcard 
+          // before re-arranging, so it can find its new position.
+          const cardsWithDisplacedWildCleared = [...targetRun.cards, ...cards].map(c => {
+              if (c.id === validation.displacedCard.id) {
+                  const { represents, ...rest } = c;
+                  return rest;
+              }
+              return c;
+          });
+          updatedRunCards = arrangeRun(cardsWithDisplacedWildCleared, preferHead);
       } else {
           // EXTEND
           const preferHead = payload.options?.preferHead || false;
